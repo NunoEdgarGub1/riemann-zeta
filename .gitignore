@@ -1,0 +1,10 @@
+*.egg-info/
+*.pyc
+.pytest_cache
+.python-version
+.mypy_cache/
+.tox/
+.coverage
+coverage/
+
+htmlcov/
