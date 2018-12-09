@@ -1,0 +1,18 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[dev-packages]
+ipython = "*"
+pytest = "*"
+mypy = "*"
+
+[packages]
+riemann-tx = "==1.1.2"
+connectrum = "*"
+aiohttp = "*"
+riemann-zeta = {path = ".", editable = true}
+
+[requires]
+python_version = "3.6"
