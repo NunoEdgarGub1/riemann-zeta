@@ -6,7 +6,7 @@ from riemann import utils as rutils
 from zeta import connection
 from zeta.utils import Header
 
-from typing import cast, List, Iterable, Optional, Tuple, Union
+from typing import cast, List, Optional, Tuple, Union
 
 
 def header_from_row(row: sqlite3.Row) -> Header:
@@ -24,8 +24,8 @@ def check_work(header: Header) -> bool:
     Returns:
         (bool): True if the header has enough work, otherwise false
     '''
-    nbits = bytes.fromhex(header['nbits'])
-    return int(header['hash'], 16) <= make_target(nbits)
+    nbits = bytes.fromhex(cast(str, header['nbits']))
+    return int(cast(str, header['hash']), 16) <= make_target(nbits)
 
 
 def make_target(nbits: bytes) -> int:
@@ -86,7 +86,8 @@ def parse_header(header: str) -> Header:
     }
 
 
-def batch_store_header(headers: Iterable[Union[Header, str]]) -> bool:
+# TODO: use the new expiremental typed dict to clean up all this
+def batch_store_header(h: List[Union[Header, str]]) -> bool:
     '''
     Stores a batch of headers in the database
     Args:
@@ -96,32 +97,44 @@ def batch_store_header(headers: Iterable[Union[Header, str]]) -> bool:
     '''
     c = connection.get_cursor()
 
-    for i in range(len(headers)):
-        if isinstance(headers[i], str):
-            headers[i] = parse_header(headers[i])
+    headers: List[Header] = []
+
+    for i in range(len(h)):
+        if isinstance(h[i], str):
+            headers.append(parse_header(h[i]))  # type: ignore
+        else:
+            headers.append(cast(Header, h[i]))
         headers[i]['height'] = 0
         headers[i]['accumulated_work'] = 0
 
     headers = list(filter(check_work, headers))
 
+    # NB: this block finds the last header for which we know a parent
+    #     it discards headers earlier in the batch
+    #     this pretty much assumes batches are ordered
     for i in range(len(headers)):
-        parent = find_by_hash(headers[i]['prev_block'])
+        parent = find_by_hash(
+            cast(str, headers[i]['prev_block']))  # type: ignore
         if parent:
-            headers[i]['height'] = parent['height'] + 1
-            headers[i]['accumulated_work'] = \
-                parent['accumulated_work'] + headers[0]['difficulty']
+            headers[i]['height'] = parent['height'] + 1  # type: ignore
+            headers[i]['accumulated_work'] = (
+                parent['accumulated_work']  # type: ignore
+                + headers[0]['difficulty'])  # type: ignore
             headers = headers[i:]
             break
 
+    # NB: this block checks if the header has a parent in the current batch
+    #     it populates the height and accumulated work fields if so
     for header in headers:
         if header['height'] == 0:
-            parent = list(filter(
+            results = list(filter(  # type: ignore
                 lambda k: k['hash'] == header['prev_block'],
                 headers))
-            if len(parent) != 0 and parent[0]['height'] > 0:
-                header['height'] = parent[0]['height'] + 1
-                header['accumulated_work'] = \
-                    parent[0]['accumulated_work'] + header['difficulty']
+            if len(results) != 0 and results[0]['height'] > 0:  # type: ignore
+                header['height'] = results[0]['height'] + 1  # type: ignore
+                header['accumulated_work'] = (
+                    results[0]['accumulated_work']  # type: ignore
+                    + header['difficulty'])  # type: ignore
 
     try:
         for header in headers:
@@ -175,8 +188,13 @@ def store_header(header: Union[Header, str]) -> bool:
 
     if 'height' not in header:
         parent_height, parent_work = parent_height_and_work(header)
-        header['height'] = parent_height + 1
-        header['accumulated_work'] = parent_work + header['difficulty']
+        if parent_height != 0 and parent_work != 0:
+            header['height'] = parent_height + 1  # type: ignore
+            header['accumulated_work'] = (
+                parent_work + header['difficulty'])  # type: ignore
+        else:
+            header['height'] = 0
+            header['accumulated_work'] = 0
 
     c = connection.get_cursor()
     try:

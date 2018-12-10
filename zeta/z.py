@@ -2,11 +2,13 @@ import asyncio
 
 from zeta import checkpoint, electrum, connection, headers
 
-from typing import cast
+from utils import Header
+
+from typing import cast, List, Union
 
 
 async def track_chain_tip() -> None:
-    q = asyncio.Queue()
+    q: asyncio.Queue = asyncio.Queue()
     await electrum.subscribe_to_headers(q)
     asyncio.ensure_future(header_queue_handler(q))
 
@@ -19,12 +21,15 @@ async def catch_up(from_height: int) -> None:
 
 
 async def maintain_db() -> None:
+    print('starting maintenance coro')
     while True:
         await asyncio.sleep(60)
         floating = headers.find_by_height(0)
+        print('performing maintenance task. '
+              'found {} headers at 0'.format(len(floating)))
         # NB: this will attempt to find their parent and fill in height/accdiff
         for header in floating:
-            headers.store_header(floating)
+            headers.store_header(header)
 
 
 async def status_updater() -> None:
@@ -47,7 +52,8 @@ async def status_updater() -> None:
 
 def process_header_batch(electrum_hex) -> None:
     blob = bytes.fromhex(electrum_hex)
-    header_list = [blob[i:i+80].hex() for i in range(0, len(blob), 80)]
+    header_list: List[Union[Header, str]]
+    header_list = [blob[i:i + 80].hex() for i in range(0, len(blob), 80)]
     headers.batch_store_header(header_list)
 
 
