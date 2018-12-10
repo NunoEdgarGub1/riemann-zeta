@@ -88,8 +88,8 @@ class MetaClient():
         '''
         res = await asyncio.gather(*coros, return_exceptions=True)
         res = list(filter(lambda k: type(k) is not ElectrumErrorResponse, res))
-        res = max(res, key=res.count)
         if len(res) != 0:
+            res = max(res, key=res.count)
             if issubclass(type(res), Exception):
                 raise res
             else:
@@ -133,7 +133,8 @@ class MetaClient():
             await asyncio.sleep(3)
             while not filter_queue.empty():
                 msgs.append(filter_queue.get_nowait())
-            msg = max(msgs, key=msgs.count)
-            if len(msgs) >= 2 and msg not in sent:
-                sent.append(msg)
-                await outq.put(msg)
+            if len(msgs) >= 1:
+                msg = max(msgs, key=msgs.count)
+                if msg not in sent:
+                    sent.append(msg)
+                    await outq.put(msg)
