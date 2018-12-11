@@ -30,7 +30,7 @@ class MetaClient():
                 await c.RPC('server.ping')
             except Exception:
                 self._clients = list(filter(lambda k: k != c, self._clients))
-                break
+                break  # exit the loop at the first error
 
     async def setup_connections(self) -> None:
         while len(self._clients) < self._num_clients:
@@ -105,7 +105,7 @@ class MetaClient():
         return await self._aggregate_results(coros)
 
     def subscribe(self, *args) -> Tuple[Awaitable, asyncio.Queue]:
-        q = asyncio.Queue()  # type: asyncio.Queue
+        q: asyncio.Queue = asyncio.Queue()
 
         client_set = random.choices(self._clients, k=self._random_set_size)
         futs_qs = [c.subscribe(*args) for c in client_set]
@@ -122,8 +122,8 @@ class MetaClient():
             self,
             qs: List[asyncio.Queue],
             outq: asyncio.Queue) -> None:
-        filter_queue = asyncio.Queue()  # type: asyncio.Queue
-        sent = []  # type: List[Any]
+        filter_queue: asyncio.Queue = asyncio.Queue()
+        sent: List[Any] = []
 
         for q in qs:
             asyncio.ensure_future(utils.queue_forwarder(q, filter_queue))

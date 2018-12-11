@@ -9,5 +9,13 @@ setup(
     package_dir={'zeta': 'zeta'},
     install_requires=[
         'connectrum'
-    ]
+    ],
+    tests_require=[
+        'tox',
+        'mypy',
+        'flake8',
+        'pytest',
+        'pytest-cov'
+    ],
+    python_requires='>=3.6'
 )

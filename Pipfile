@@ -7,12 +7,12 @@ name = "pypi"
 ipython = "*"
 pytest = "*"
 mypy = "*"
+tox = "*"
+pytest-cov = "*"
+riemann-zeta = {path = ".", editable = true}
 
 [packages]
-riemann-tx = "==1.1.2"
 connectrum = "*"
-aiohttp = "*"
-riemann-zeta = {path = ".", editable = true}
 
 [requires]
 python_version = "3.6"
