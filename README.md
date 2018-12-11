@@ -9,7 +9,9 @@ Zeta is an ultra-minimal Bitcoin light client.
 
 Zeta connects to Electrum servers, retrieves Bitcoin header information and stores it in a local DB. It maintains a connection to several electrum servers, and processes headers as they come in.
 
-Zeta starts from a checkpoint, which is hardcoded. It ranks blocks by accumulated work from that checkpoint.
+Zeta starts from a checkpoint, which are hardcoded. It ranks blocks by accumulated work from that checkpoint.
+
+We will evetually support custom checkpoints
 
 
 ## Installation
@@ -20,13 +22,13 @@ pip install riemann-zeta
 
 ## Configuration
 
-Yes, surprisingly.
+Yes, surprisingly. We have two configuration environment variables.
+Make sure they're set BEFORE you import zeta.
 
 ```
 export ZETA_DB_PATH="/absolute/path/to/db/directory"
 export ZETA_DB_NAME="yourdb.name"
 ```
-
 
 ## Usage
 

@@ -13,7 +13,7 @@ def header_from_row(row: sqlite3.Row) -> Header:
     '''
     Does what it says on the tin
     '''
-    return dict(zip(row.keys(), row))
+    return cast(Header, dict(zip(row.keys(), row)))
 
 
 def check_work(header: Header) -> bool:
@@ -83,6 +83,8 @@ def parse_header(header: str) -> Header:
         'nonce': as_bytes[76:80].hex(),
         'difficulty': parse_difficulty(nbits),
         'hex': header,
+        'height': 0,
+        'accumulated_work': 0
     }
 
 
@@ -187,7 +189,7 @@ def store_header(header: Union[Header, str]) -> bool:
     if not check_work(header):
         return False
 
-    if 'height' not in header:
+    if header['height'] == 0:
         parent_height, parent_work = parent_height_and_work(header)
         if parent_height != 0 and parent_work != 0:
             header['height'] = parent_height + 1  # type: ignore

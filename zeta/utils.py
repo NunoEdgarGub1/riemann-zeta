@@ -1,7 +1,27 @@
 import asyncio
-from typing import Any, Callable, Dict, Optional, Union
 
-Header = Dict[str, Union[str, int]]
+from mypy_extensions import TypedDict
+from typing import Any, Callable, Optional
+
+
+# Header = Dict[str, Union[str, int]]
+
+Header = TypedDict(
+    'Header',
+    {
+        'hash': str,
+        'version': int,
+        'prev_block': str,
+        'merkle_root': str,
+        'timestamp': int,
+        'nbits': str,
+        'nonce': str,
+        'difficulty': int,
+        'hex': str,
+        'height': int,
+        'accumulated_work': int
+    }
+)
 
 
 async def queue_forwarder(

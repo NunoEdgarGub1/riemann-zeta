@@ -3,9 +3,20 @@ import asyncio
 from zeta import utils
 from zeta.electrum.metaclient import MetaClient
 
-from typing import Dict, Optional, Union
+from typing import Optional
+from mypy_extensions import TypedDict
 
 _CLIENT: Optional[MetaClient] = None
+
+
+ElectrumGetHeadersResponse = TypedDict(
+    'ElectrumGetHeadersResponse',
+    {
+        'count': int,
+        'hex': str,
+        'max': int
+    }
+)
 
 
 async def _get_client() -> MetaClient:
@@ -31,8 +42,6 @@ async def subscribe_to_headers(outq: asyncio.Queue) -> None:
     '''
     Subscribes to headers list. Forwards events to a queue
     Args:
-        client   (StratumClient): Electrum server client
-        address_list (list(str)): the addresses to subscribe to
         outq     (asyncio.Queue): a queue to route incoming events to
     '''
     client = await _get_client()
@@ -43,7 +52,7 @@ async def subscribe_to_headers(outq: asyncio.Queue) -> None:
 
 async def get_headers(
         start_height: int,
-        count: int) -> Dict[str, Union[str, int]]:
+        count: int) -> ElectrumGetHeadersResponse:
     '''Gets a set of headers from the Electrum server
     Args:
         start_height     (int): the height of the first header
