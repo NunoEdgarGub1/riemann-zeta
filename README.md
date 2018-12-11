@@ -11,7 +11,7 @@ Zeta connects to Electrum servers, retrieves Bitcoin header information and stor
 
 Zeta starts from a checkpoint, which are hardcoded. It ranks blocks by accumulated work from that checkpoint.
 
-We will evetually support custom checkpoints
+We will eventually support custom checkpoints
 
 
 ## Installation
