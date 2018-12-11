@@ -9,9 +9,7 @@ Zeta is an ultra-minimal Bitcoin light client.
 
 Zeta connects to Electrum servers, retrieves Bitcoin header information and stores it in a local DB. It maintains a connection to several electrum servers, and processes headers as they come in.
 
-Zeta starts from a checkpoint, which are hardcoded. It ranks blocks by accumulated work from that checkpoint.
-
-We will eventually support custom checkpoints
+Zeta starts from a checkpoint, which are hardcoded. It ranks blocks by accumulated work from that checkpoint. We will eventually support specifying your own checkpoints.
 
 
 ## Installation
@@ -108,11 +106,15 @@ Very young and resource inefficient.
 
 #### Why is Zeta?
 
-Zeta is pure python, and has only 1 dependency (which is also pure python).
+Zeta is pure python, and has only 1 dependency (which is also pure python). We intended it to be lightweight and easily packaged. We will be using it in the wild shortly.
+
+#### Does zeta support multiple chains?
+
+Not at the moment. Although it could pretty easily. If we wanted to move that direction, each chain would need to supply its own parsing interface and schema, and I haven't bothered looking at that yet.
 
 #### Why are the hardcoded servers and checkpoints in .py files?
 
-Pyinstaller does not support pkg_resources. Putting them in .py files ensure they can be packaged in executables
+Pyinstaller does not support pkg_resources. Putting the servers in .py files ensures they can be packaged in executables
 
 #### What else?
 
