@@ -14,7 +14,7 @@ async def _get_client() -> MetaClient:
     Gets a singleton metaclient
 
     Returns:
-        (bidder.metaclient.MetaClient): an Electrum metaclient
+        (zeta.electrum.metaclient.MetaClient): an Electrum metaclient
     '''
     global _CLIENT
 

@@ -157,6 +157,7 @@ def batch_store_header(h: List[Union[Header, str]]) -> bool:
         connection.commit()
         return True
     except Exception:
+        raise
         return False
     finally:
         c.close()
@@ -217,6 +218,7 @@ def store_header(header: Union[Header, str]) -> bool:
         connection.commit()
         return True
     except Exception:
+        raise
         return False
     finally:
         c.close()

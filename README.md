@@ -20,11 +20,22 @@ pip install riemann-zeta
 
 ## Configuration
 
-No. Not yet
+Yes, surprisingly.
+
+```
+export ZETA_DB_PATH="/absolute/path/to/db/directory"
+export ZETA_DB_NAME="yourdb.name"
+```
 
 
 ## Usage
 
+### Command line (non-interactive, just syncs the db)
+```
+pipenv run python zeta/z.py
+```
+
+### Programmatically:
 ```python
 import asyncio
 
@@ -32,8 +43,8 @@ from zeta import z, headers
 
 asyncio.ensure_future(z.zeta())
 
-# NB: Chain sync takes some time
-#     You have to wait
+# NB: Chain sync may take some time, depending on your checkpoint
+#     You have to wait.
 
 # returns a List of header dicts, heights are NOT (!!) unique
 headers.find_by_height(595959)  

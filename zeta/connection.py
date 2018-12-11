@@ -3,9 +3,11 @@ import sys
 import sqlite3
 
 
+# TODO: Clean all this up and make better
+
 def ensure_directory() -> None:
     '''
-    Creates the summa/bidder data directory if it does not already exist
+    Creates the PATH data directory if it does not already exist
     '''
     if not os.path.exists(PATH):
         os.makedirs(PATH)
@@ -16,15 +18,15 @@ if sys.platform.startswith('win'):
 else:
     PATH_ROOT = os.path.expanduser('~')
 
-PATH = os.path.join(PATH_ROOT, '.summa', 'zeta')
+DEFAULT_PATH = os.path.join(PATH_ROOT, '.summa', 'zeta')
 
-ensure_directory()
+# Prefer the env variables
+PATH = os.environ.get('ZETA_DB_PATH', DEFAULT_PATH)
+DB_NAME = os.environ.get('ZETA_DB_NAME', 'zeta.db')
 
-DB_PBKDF_SALT = b'summa-riemann-zeta'
-PBKDF_ITERATIONS = 100000
-
-DB_NAME = 'zeta.db'
+# Set the path and make sure it exists
 DB_PATH = os.path.join(PATH, DB_NAME)
+ensure_directory()
 
 CONN = sqlite3.connect(DB_PATH)
 CONN.row_factory = sqlite3.Row
@@ -39,6 +41,11 @@ def get_cursor() -> sqlite3.Cursor:
 
 
 def ensure_tables() -> bool:
+    '''
+
+    Returns:
+        (bool): true if table exists/was created, false if there's an exception
+    '''
     c = get_cursor()
     try:
         c.execute('''
