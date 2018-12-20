@@ -1,5 +1,6 @@
 from mypy_extensions import TypedDict
 
+from typing import List
 
 Header = TypedDict(
     'Header',
@@ -18,6 +19,15 @@ Header = TypedDict(
     }
 )
 
+Address = TypedDict(
+    'Address',
+    {
+        'address': str,
+        'script': bytes,
+        'script_pubkeys': List[str]
+    }
+)
+
 Outpoint = TypedDict(
     'Outpoint',
     {
@@ -30,10 +40,12 @@ Prevout = TypedDict(
     'Prevout',
     {
         'outpoint': Outpoint,
+        'tx_id': str,
+        'idx': int,
         'value': int,
-        'address': str,
         'spent_at': int,
-        'spent_by': str
+        'spent_by': str,
+        'address': str
     }
 )
 

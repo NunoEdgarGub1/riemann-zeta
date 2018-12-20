@@ -68,6 +68,12 @@ def ensure_tables() -> bool:
                 script BLOB NOT NULL DEFAULT (x''))
         ''')
         c.execute('''
+            CREATE TABLE IF NOT EXISTS pubkey_to_script(
+                pubkey TEXT,
+                script BLOB,
+                FOREIGN KEY(script) REFERENCES addresses(script))
+        ''')
+        c.execute('''
             CREATE TABLE IF NOT EXISTS keys(
                 pubkey BLOB PRIMARY KEY,
                 privkey BLOB,

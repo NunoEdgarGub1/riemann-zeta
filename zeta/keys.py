@@ -1,7 +1,7 @@
 import sqlite3
 
 from typing import cast
-from zeta.types import KeyEntry
+from zeta.zeta_types import KeyEntry
 
 
 def key_from_row(row: sqlite3.Row) -> KeyEntry:

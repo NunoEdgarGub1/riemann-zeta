@@ -2,7 +2,7 @@ import asyncio
 
 from zeta import checkpoint, electrum, connection, headers
 
-from zeta.types import Header
+from zeta.zeta_types import Header
 from typing import cast, List, Union
 
 
