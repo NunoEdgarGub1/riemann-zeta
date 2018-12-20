@@ -76,11 +76,11 @@ def ensure_tables() -> bool:
                 tx_id TEXT,
                 idx INTEGER,
                 value INTEGER,
-                spent_at INTEGER NOT NULL DEFAULT -1,
+                spent_at INTEGER NOT NULL DEFAULT -2,
                 spent_by TEXT NOT NULL DEFAULT '',
                 address TEXT,
                 FOREIGN KEY(address) REFERENCES keys(address))
-            ''')
+            ''')  # default -2 for not yet spent. electrum uses -1 for mempool
 
         commit()
         return True
