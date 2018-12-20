@@ -63,12 +63,18 @@ def ensure_tables() -> bool:
                 accumulated_work INTEGER)
             ''')
         c.execute('''
-            CREATE TABLE IF NOT EXISTS keys(
+            CREATE TABLE IF NOT EXISTS addresses(
                 address TEXT PRIMARY KEY,
+                script BLOB NOT NULL DEFAULT (x''))
+        ''')
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS keys(
+                pubkey BLOB PRIMARY KEY,
                 privkey BLOB,
-                pubkey BLOB,
                 derivation TEXT NOT NULL DEFAULT '',
-                chain TEXT NOT NULL DEFAULT 'btc')
+                chain TEXT NOT NULL DEFAULT 'btc',
+                address TEXT,
+                FOREIGN KEY(address) REFERENCES addresses(address))
             ''')
         c.execute('''
             CREATE TABLE IF NOT EXISTS prevouts(
@@ -79,7 +85,7 @@ def ensure_tables() -> bool:
                 spent_at INTEGER NOT NULL DEFAULT -2,
                 spent_by TEXT NOT NULL DEFAULT '',
                 address TEXT,
-                FOREIGN KEY(address) REFERENCES keys(address))
+                FOREIGN KEY(address) REFERENCES addresses(address))
             ''')  # default -2 for not yet spent. electrum uses -1 for mempool
 
         commit()
