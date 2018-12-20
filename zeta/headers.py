@@ -4,8 +4,8 @@ import sqlite3
 from riemann import utils as rutils
 
 from zeta import connection
-from zeta.utils import Header
 
+from zeta.types import Header
 from typing import cast, List, Optional, Tuple, Union
 
 
@@ -88,7 +88,6 @@ def parse_header(header: str) -> Header:
     }
 
 
-# TODO: use the new expiremental typed dict to clean up all this
 def batch_store_header(h: List[Union[Header, str]]) -> bool:
     '''
     Stores a batch of headers in the database

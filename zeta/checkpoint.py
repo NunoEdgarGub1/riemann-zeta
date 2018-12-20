@@ -1,6 +1,6 @@
 # flake8: noqa
 
-from zeta.utils import Header
+from zeta.types import Header
 
 from typing import List
 

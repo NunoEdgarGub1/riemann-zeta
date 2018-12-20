@@ -5,12 +5,12 @@ import sqlite3
 
 # TODO: Clean all this up and make better
 
-def ensure_directory() -> None:
+def ensure_directory(p) -> None:
     '''
     Creates the PATH data directory if it does not already exist
     '''
-    if not os.path.exists(PATH):
-        os.makedirs(PATH)
+    if not os.path.exists(p):
+        os.makedirs(p)
 
 
 if sys.platform.startswith('win'):
@@ -26,7 +26,7 @@ DB_NAME = os.environ.get('ZETA_DB_NAME', 'zeta.db')
 
 # Set the path and make sure it exists
 DB_PATH = os.path.join(PATH, DB_NAME)
-ensure_directory()
+ensure_directory(PATH)
 
 CONN = sqlite3.connect(DB_PATH)
 CONN.row_factory = sqlite3.Row
@@ -62,6 +62,26 @@ def ensure_tables() -> bool:
                 height INTEGER,
                 accumulated_work INTEGER)
             ''')
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS keys(
+                address TEXT PRIMARY KEY,
+                privkey BLOB,
+                pubkey BLOB,
+                derivation TEXT NOT NULL DEFAULT '',
+                chain TEXT NOT NULL DEFAULT 'btc')
+            ''')
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS prevouts(
+                outpoint TEXT PRIMARY KEY,
+                tx_id TEXT,
+                idx INTEGER,
+                value INTEGER,
+                spent_at INTEGER NOT NULL DEFAULT -1,
+                spent_by TEXT NOT NULL DEFAULT '',
+                address TEXT,
+                FOREIGN KEY(address) REFERENCES keys(address))
+            ''')
+
         commit()
         return True
     except Exception as e:

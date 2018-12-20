@@ -2,7 +2,7 @@ import asyncio
 
 from zeta import checkpoint, electrum, connection, headers
 
-from zeta.utils import Header
+from zeta.types import Header
 from typing import cast, List, Union
 
 
@@ -112,7 +112,7 @@ def initial_setup() -> int:
     Ensures the database directory exists, and tables exist
     Then set the highest checkpoint, and return its height
     '''
-    connection.ensure_directory()
+    connection.ensure_directory(connection.PATH)
     connection.ensure_tables()
 
     # Get the highest checkpoint
