@@ -3,7 +3,7 @@ import sqlite3
 
 from riemann import utils as rutils
 
-from zeta import connection
+from zeta.db import connection
 
 from zeta.zeta_types import Header
 from typing import cast, List, Optional, Tuple, Union
