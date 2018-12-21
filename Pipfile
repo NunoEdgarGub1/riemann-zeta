@@ -10,10 +10,11 @@ mypy = "*"
 tox = "*"
 pytest-cov = "*"
 riemann-zeta = {path = ".", editable = true}
+mypy-extensions = "*"
 
 [packages]
 connectrum = "*"
-mypy-extensions = "*"
+riemann-tx = "*"
 
 [requires]
 python_version = "3.6"
