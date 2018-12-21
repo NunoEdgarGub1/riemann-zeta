@@ -40,8 +40,6 @@ Prevout = TypedDict(
     'Prevout',
     {
         'outpoint': Outpoint,
-        'tx_id': str,
-        'idx': int,
         'value': int,
         'spent_at': int,
         'spent_by': str,
