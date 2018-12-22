@@ -139,7 +139,7 @@ def find_by_script(script: bytes) -> List[AddressEntry]:
     try:
         res = [address_from_row(r) for r in c.execute(
             '''
-            SELECT * FROM
+            SELECT * FROM addresses
             WHERE script = :script
             ''',
             {'script': script})]
@@ -153,7 +153,7 @@ def find_by_pubkey(pubkey: str) -> List[AddressEntry]:
     try:
         res = [address_from_row(r) for r in c.execute(
             '''
-            SELECT * FROM
+            SELECT * FROM addresses
             WHERE pubkey = :pubkey
             ''',
             {'pubkey': pubkey})]
