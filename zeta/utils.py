@@ -23,3 +23,19 @@ async def queue_forwarder(
     while True:
         msg = await inq.get()
         await outq.put(t(msg))
+
+
+def is_pubkey(p: str) -> bool:
+    '''
+    determines if a string can be interpreted as btc hex formatted pubkey
+    '''
+    prefix = p[0:2]
+    try:
+        bytes.fromhex(p)
+    except ValueError:
+        return False
+    if len(p) == 66:   # compressed
+        return prefix in ['02', '03']
+    if len(p) == 130:  # uncompressed
+        return prefix == '04'
+    return False

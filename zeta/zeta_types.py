@@ -1,6 +1,6 @@
 from mypy_extensions import TypedDict
 
-from typing import List
+from typing import List, Optional
 
 Header = TypedDict(
     'Header',
@@ -19,11 +19,11 @@ Header = TypedDict(
     }
 )
 
-Address = TypedDict(
-    'Address',
+AddressEntry = TypedDict(
+    'AddressEntry',
     {
         'address': str,
-        'script': bytes,
+        'script': Optional[bytes],
         'script_pubkeys': List[str]
     }
 )

@@ -252,8 +252,6 @@ def find_by_height(height: int) -> List[Header]:
             ''',
             {'height': height})]
         return res
-    except Exception:
-        raise
     finally:
         c.close()
 
@@ -286,10 +284,7 @@ def find_by_hash(hash: str) -> Optional[Header]:
             {'hash': hash})]
         if len(res) != 0:
             return res[0]
-        else:
-            return None
-    except Exception:
-        raise
+        return None
     finally:
         c.close()
 
