@@ -1,0 +1,9 @@
+[run]
+source = zeta/
+
+[report]
+show_missing = True
+sort = Miss
+
+[html]
+directory = coverage/html/
