@@ -26,14 +26,14 @@ def validate_address(address: AddressEntry) -> bool:
     '''
     try:
         h = addr.parse_hash(address['address'])
-        if address['script'] == '':
+        if address['script'] == b'':
             return True
 
         if address['script_pubkeys'] != pubkeys_from_script(address['script']):
             return False
 
-        if h in [rutils.sha256(address['script']),
-                 rutils.hash160(address['script'])]:
+        if h in [rutils.sha256(address['script']),    # p2wsh
+                 rutils.hash160(address['script'])]:  # p2sh
             return True
     except ValueError:
         pass
