@@ -11,6 +11,7 @@ tox = "*"
 pytest-cov = "*"
 riemann-zeta = {path = ".", editable = true}
 mypy-extensions = "*"
+flake8 = "*"
 
 [packages]
 connectrum = "*"
