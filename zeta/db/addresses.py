@@ -35,7 +35,7 @@ def validate_address(address: AddressEntry) -> bool:
         if h in [rutils.sha256(address['script']),    # p2wsh
                  rutils.hash160(address['script'])]:  # p2sh
             return True
-    except ValueError:
+    except (ValueError, TypeError, KeyError):
         pass
 
     return False
@@ -76,8 +76,8 @@ def store_address(address: Union[str, AddressEntry]) -> bool:
     try:
         c.execute(
             '''
-            INSERT OR REPLACE INTO addresses VALUE (
-                :address
+            INSERT OR REPLACE INTO addresses VALUES (
+                :address,
                 :script)
             ''',
             a)
@@ -86,7 +86,7 @@ def store_address(address: Union[str, AddressEntry]) -> bool:
         for pubkey in a['script_pubkeys']:
             c.execute(
                 '''
-                    INSERT OR REPLACE INTO pubkey_to_script VALUE (
+                    INSERT OR REPLACE INTO pubkey_to_script VALUES (
                         :pubkey,
                         :script
                     )
@@ -123,12 +123,12 @@ def find_by_address(address: str) -> Optional[AddressEntry]:
     try:
         res = c.execute(
             '''
-            SELECT pubkey from addresses
+            SELECT * from addresses
             WHERE address = :address
             ''',
-            {'script': address})
-        if len(res) != 0:
-            return address_from_row(res[0])
+            {'address': address})
+        for a in res:
+            return address_from_row(a)
         return None
     finally:
         c.close()
@@ -154,9 +154,23 @@ def find_by_pubkey(pubkey: str) -> List[AddressEntry]:
         res = [address_from_row(r) for r in c.execute(
             '''
             SELECT * FROM addresses
-            WHERE pubkey = :pubkey
-            ''',
+            WHERE script in
+                (SELECT script from pubkey_to_script
+                WHERE pubkey = :pubkey)
+                ''',
             {'pubkey': pubkey})]
         return res
+    finally:
+        c.close()
+
+
+def print_dump():
+    c = connection.get_cursor()
+    try:
+        res = [(r) for r in c.execute(
+            '''
+            SELECT * FROM addresses
+            ''')]
+        print(res)
     finally:
         c.close()

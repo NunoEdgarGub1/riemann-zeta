@@ -8,9 +8,34 @@ from zeta.db import addresses, connection
 class TestAddresses(unittest.TestCase):
 
     def setUp(self):
+        # Replace the connection with an in-memory DB
         c = sqlite3.connect(':memory:')
+        c.row_factory = sqlite3.Row
         self._old_conn = connection.CONN
         connection.CONN = c
+        connection.ensure_tables()
+
+        self.test_address = {
+            'address': 'bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3',  # noqa: E501
+            'script': bytes.fromhex('210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ac'),  # noqa: E501
+            'script_pubkeys': ['0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798']  # noqa: E501
+        }
+
+        self.test_msig = {
+            'address': 'bc1qmqyekxnf4xhxffv5fnlu387sggkhd5pw2w7g5tvtmjuar6ev6d6sld5pfl',  # noqa: E501
+            'script': bytes.fromhex('210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81788210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81799210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ae'),  # noqa: E501
+            'script_pubkeys': ['0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81788', '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81799', '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798']  # noqa: E501
+        }
+
+        self.test_msig_legacy = {
+            'address': '36gWkx1AR4ABH9nqzzsRJ6NFMedHw6QzW3',
+            'script': bytes.fromhex('210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81788210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81799210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ae'),  # noqa: E501
+            'script_pubkeys': ['0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81788', '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81799', '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798']  # noqa: E501
+        }
+
+        self.assertTrue(addresses.store_address(self.test_address))
+        self.assertTrue(addresses.store_address(self.test_msig))
+        self.assertTrue(addresses.store_address(self.test_msig_legacy))
 
     def tearDown(self):
         connection.CONN = self._old_conn
@@ -71,17 +96,27 @@ class TestAddresses(unittest.TestCase):
             ['0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81788', '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81799', '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798']  # noqa: E501
         )
 
-    def test_score_address(self):
-        ...
+    def test_store_address(self):
+        # storage is done in setup. So this tests mostly failure
+        self.assertFalse(addresses.store_address(6))
+        self.assertFalse(addresses.store_address(str))
+        self.assertFalse(addresses.store_address('38389383838'))
+        self.assertFalse(addresses.store_address({}))
 
     def test_find_associated_pubkeys(self):
-        ...
+        res = addresses.find_associated_pubkeys(self.test_address['script'])
+        self.assertEqual(res, self.test_address['script_pubkeys'])
 
     def test_find_by_address(self):
-        ...
+        res = addresses.find_by_address(self.test_address['address'])
+        self.assertEqual(res, self.test_address)
+
+        self.assertIsNone(addresses.find_by_address('toast'))
 
     def test_find_by_script(self):
-        ...
+        res = addresses.find_by_script(self.test_msig['script'])
+        self.assertEqual(len(res), 2)
 
     def test_find_by_pubkey(self):
-        ...
+        res = addresses.find_by_pubkey(self.test_address['script_pubkeys'][0])
+        self.assertEqual(len(res), 3)
