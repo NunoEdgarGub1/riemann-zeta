@@ -75,7 +75,7 @@ def ensure_tables() -> bool:
         ''')
         c.execute('''
             CREATE TABLE IF NOT EXISTS keys(
-                pubkey BLOB PRIMARY KEY,
+                pubkey TEXT PRIMARY KEY,
                 privkey BLOB,
                 derivation TEXT NOT NULL DEFAULT '',
                 chain TEXT NOT NULL DEFAULT 'btc',

@@ -52,7 +52,7 @@ KeyEntry = TypedDict(
     {
         'address': str,
         'privkey': bytes,
-        'pubkey': bytes,
+        'pubkey': str,
         'derivation': str,
         'chain': str
     }

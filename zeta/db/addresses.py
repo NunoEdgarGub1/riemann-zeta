@@ -134,6 +134,8 @@ def find_by_address(address: str) -> Optional[AddressEntry]:
             ''',
             {'address': address})
         for a in res:
+            # little hacky. returns first entry
+            # we know there can only be one
             return address_from_row(a)
         return None
     finally:
@@ -168,7 +170,7 @@ def find_by_pubkey(pubkey: str) -> List[AddressEntry]:
             SELECT * FROM addresses
             WHERE script IN
                 (SELECT script FROM pubkey_to_script
-                WHERE pubkey = :pubkey)
+                 WHERE pubkey = :pubkey)
             ''',
             {'pubkey': pubkey})]
         return res
