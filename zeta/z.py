@@ -1,6 +1,6 @@
 import asyncio
 
-from zeta.sync import headers
+from zeta.sync import chain
 
 
 async def zeta() -> None:
@@ -9,7 +9,7 @@ async def zeta() -> None:
     TODO: keep references to the tasks, and monitor them
           gracefully shut down conections and the DB
     '''
-    asyncio.ensure_future(headers.sync())
+    asyncio.ensure_future(chain.sync())
 
 
 if __name__ == '__main__':
