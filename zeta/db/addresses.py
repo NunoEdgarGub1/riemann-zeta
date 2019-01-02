@@ -12,6 +12,9 @@ from typing import List, Union, Optional
 
 
 def address_from_row(row: sqlite3.Row) -> AddressEntry:
+    '''
+    Turns a row object into an AddressEntry dict
+    '''
     a: AddressEntry = {
         'address': row['address'],
         'script': row['script'],
@@ -119,6 +122,9 @@ def find_associated_pubkeys(script: bytes) -> List[str]:
 
 
 def find_by_address(address: str) -> Optional[AddressEntry]:
+    '''
+    Finds an AddressEntry for the address if it exists, returns None otherwise
+    '''
     c = connection.get_cursor()
     try:
         res = c.execute(
@@ -135,6 +141,9 @@ def find_by_address(address: str) -> Optional[AddressEntry]:
 
 
 def find_by_script(script: bytes) -> List[AddressEntry]:
+    '''
+    Finds all AddressEntries with the corresponding Script
+    '''
     c = connection.get_cursor()
     try:
         res = [address_from_row(r) for r in c.execute(
@@ -149,6 +158,9 @@ def find_by_script(script: bytes) -> List[AddressEntry]:
 
 
 def find_by_pubkey(pubkey: str) -> List[AddressEntry]:
+    '''
+    Finds all AddressEntries whose script includes the specified pubkey
+    '''
     c = connection.get_cursor()
     try:
         res = [address_from_row(r) for r in c.execute(
@@ -157,20 +169,8 @@ def find_by_pubkey(pubkey: str) -> List[AddressEntry]:
             WHERE script IN
                 (SELECT script FROM pubkey_to_script
                 WHERE pubkey = :pubkey)
-                ''',
+            ''',
             {'pubkey': pubkey})]
         return res
-    finally:
-        c.close()
-
-
-def print_dump():
-    c = connection.get_cursor()
-    try:
-        res = [(r) for r in c.execute(
-            '''
-            SELECT * FROM addresses
-            ''')]
-        print(res)
     finally:
         c.close()
