@@ -8,12 +8,34 @@ from typing import cast, List, Union
 
 
 async def sync() -> None:
+    '''
+    Starts all header tracking processes
+    1. subscribe to headers feed (track chain tip)
+    2. catch up to the servers' view of the chain tip
+    3. clean up any headers that didn't fit a chain when we found them
+    4. print status updates
+    '''
     last_known_height = _initial_setup()
     # NB: assume there hasn't been a 10 block reorg
     asyncio.ensure_future(_track_chain_tip())
     asyncio.ensure_future(_catch_up(last_known_height))
     asyncio.ensure_future(_maintain_db())
     asyncio.ensure_future(_status_updater())
+
+
+def _initial_setup() -> int:
+    '''
+    Ensures the database directory exists, and tables exist
+    Then set the highest checkpoint, and return its height
+    '''
+    connection.ensure_directory(connection.PATH)
+    connection.ensure_tables()
+
+    # Get the highest checkpoint
+    latest_checkpoint = max(checkpoint.CHECKPOINTS, key=lambda k: k['height'])
+    headers.store_header(latest_checkpoint)
+
+    return cast(int, headers.find_highest()[0]['height'])
 
 
 async def _track_chain_tip() -> None:
@@ -115,18 +137,3 @@ def process_header_batch(electrum_hex: str) -> None:
     header_list = [blob[i:i + 80].hex() for i in range(0, len(blob), 80)]
 
     headers.batch_store_header(header_list)
-
-
-def _initial_setup() -> int:
-    '''
-    Ensures the database directory exists, and tables exist
-    Then set the highest checkpoint, and return its height
-    '''
-    connection.ensure_directory(connection.PATH)
-    connection.ensure_tables()
-
-    # Get the highest checkpoint
-    latest_checkpoint = max(checkpoint.CHECKPOINTS, key=lambda k: k['height'])
-    headers.store_header(latest_checkpoint)
-
-    return cast(int, headers.find_highest()[0]['height'])
