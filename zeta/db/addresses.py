@@ -109,7 +109,7 @@ def find_associated_pubkeys(script: bytes) -> List[str]:
     try:
         res = c.execute(
             '''
-            SELECT pubkey from pubkey_to_script
+            SELECT pubkey FROM pubkey_to_script
             WHERE script = :script
             ''',
             {'script': script})
@@ -154,8 +154,8 @@ def find_by_pubkey(pubkey: str) -> List[AddressEntry]:
         res = [address_from_row(r) for r in c.execute(
             '''
             SELECT * FROM addresses
-            WHERE script in
-                (SELECT script from pubkey_to_script
+            WHERE script IN
+                (SELECT script FROM pubkey_to_script
                 WHERE pubkey = :pubkey)
                 ''',
             {'pubkey': pubkey})]
