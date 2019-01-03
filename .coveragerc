@@ -1,9 +1,11 @@
 [run]
 source = zeta/
+omit =
+    zeta/tests/*
 
 [report]
 show_missing = True
-sort = Miss
+sort = Name
 
 [html]
 directory = coverage/html/
