@@ -8,6 +8,7 @@ class TestPrevouts(unittest.TestCase):
     def setUp(self):
         pass
 
+    @unittest.skip('WIP')
     def test_store_prevout(self):
         prevout = Prevout(
                 outpoint='a76f3ccd1523f75b45a20f5e40ad71b70125a2f669a58a95aab5b71cbd28a4b000000000',    # noqa: E501
