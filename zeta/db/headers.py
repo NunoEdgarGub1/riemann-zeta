@@ -13,7 +13,7 @@ def header_from_row(row: sqlite3.Row) -> Header:
     '''
     Does what it says on the tin
     '''
-    return cast(Header, dict(zip(row.keys(), row)))
+    return cast(Header, dict((k, row[k]) for k in row.keys()))
 
 
 def check_work(header: Header) -> bool:

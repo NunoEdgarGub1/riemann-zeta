@@ -89,10 +89,9 @@ def store_address(address: Union[str, AddressEntry]) -> bool:
         for pubkey in a['script_pubkeys']:
             c.execute(
                 '''
-                    INSERT OR REPLACE INTO pubkey_to_script VALUES (
-                        :pubkey,
-                        :script
-                    )
+                INSERT OR REPLACE INTO pubkey_to_script VALUES (
+                    :pubkey,
+                    :script)
                 ''',
                 {'pubkey': pubkey, 'script': a['script']})
         connection.commit()

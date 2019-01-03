@@ -2,7 +2,6 @@ import sqlite3
 import unittest
 
 from zeta.db import addresses, connection
-# from zeta.zeta_types import AddressEntry
 
 
 class TestAddresses(unittest.TestCase):

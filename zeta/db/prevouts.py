@@ -6,7 +6,11 @@ from typing import cast, List
 
 
 def prevout_from_row(row: sqlite3.Row) -> Prevout:
-    return cast(Prevout, dict(zip(row.keys(), row)))
+    return cast(Prevout, dict((k, row[k]) for k in row.keys()))
+
+
+def validate_prevout(prevout: Prevout) -> bool:
+    ...
 
 
 def store_prevout(prevout: Prevout) -> bool:
