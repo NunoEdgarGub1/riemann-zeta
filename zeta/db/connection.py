@@ -96,8 +96,7 @@ def ensure_tables() -> bool:
 
         commit()
         return True
-    except Exception as e:
-        print(e, str(e))
+    except Exception:
         return False
     finally:
         c.close()
