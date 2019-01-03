@@ -9,10 +9,6 @@ def prevout_from_row(row: sqlite3.Row) -> Prevout:
     return cast(Prevout, dict((k, row[k]) for k in row.keys()))
 
 
-def validate_prevout(prevout: Prevout) -> bool:
-    ...
-
-
 def store_prevout(prevout: Prevout) -> bool:
     '''
     Stores a prevout in the database
@@ -78,12 +74,60 @@ def find_by_address(address: str) -> List[Prevout]:
         c.close()
 
 
-def find_by_txid(txid: str) -> List[Prevout]:
-    ...
+def find_by_txid(tx_id: str) -> List[Prevout]:
+    '''
+    Finds prevouts by associated txid.
+    Args:
+        tx_id (str):
+    Returns:
+        dict:
+            outpoint    (dict): Outpoint
+            value       (int): tx value in satoshis
+            address     (str):
+            spent_at    (int): block height tx was spent
+            spent_by    (str): txid of spend tx
+    '''
+    c = connection.get_cursor()
+
+    try:
+        return [prevout_from_row(r) for r in c.execute(
+            '''
+            SELECT * FROM prevouts
+            WHERE tx_id = :tx_id
+            ''',
+            {'tx_id': tx_id})]
+    except Exception:
+        raise
+    finally:
+        c.close()
 
 
-def find_by_outpoint(txid: str) -> List[Prevout]:
-    ...
+def find_by_outpoint(outpoint: str) -> List[Prevout]:
+    '''
+    Finds prevouts by associated outpoint.
+    Args:
+        outpoint (str):
+    Returns:
+        dict:
+            outpoint    (dict): Outpoint
+            value       (int): tx value in satoshis
+            address     (str):
+            spent_at    (int): block height tx was spent
+            spent_by    (str): txid of spend tx
+    '''
+    c = connection.get_cursor()
+
+    try:
+        return [prevout_from_row(r) for r in c.execute(
+            '''
+            SELECT * FROM prevouts
+            WHERE outpoint = :outpoint
+            ''',
+            {'outpoint': outpoint})]
+    except Exception:
+        raise
+    finally:
+        c.close()
 
 
 def find_unspents(txid: str) -> List[Prevout]:
