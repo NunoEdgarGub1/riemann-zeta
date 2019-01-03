@@ -8,7 +8,7 @@ from zeta.db import addresses, connection, prevouts
 class TestPrevouts(unittest.TestCase):
 
     def setUp(self):
-        # Replace the connection with an in-memory DB
+        # Replace the connection with an in-memory DB to avoid pollution
         c = sqlite3.connect(':memory:')
         c.row_factory = sqlite3.Row
         self._old_conn = connection.CONN
