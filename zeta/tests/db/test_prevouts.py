@@ -15,7 +15,7 @@ class TestPrevouts(unittest.TestCase):
 
         self.test_prevouts = {
                 'outpoint': 'a76f3ccd1523f75b45a20f5e40ad71b70125a2f669a58a95aab5b71cbd28a4b000000000',    # noqa: E501
-                'tx_id': 'a76f3ccd1523f75b45a20f5e40ad71b70125a2f669a58a95aab5b71cbd28a4b0',   # noqa: E501
+                'tx_id': 'a76f3ccd1523f75b45a20f5e40ad71b70125a2f669a58a95aab5b71cbd28a4b0',    # noqa: E501
                 'idx': 0,
                 'value': 41794084,
                 'spent_at': 554702,
@@ -28,7 +28,6 @@ class TestPrevouts(unittest.TestCase):
         connection.CONN.close()
         connection.CONN = self._old_conn
 
-    @unittest.skip('WIP')
     def test_store_prevout(self):
         prevout = Prevout(
                 outpoint='a76f3ccd1523f75b45a20f5e40ad71b70125a2f669a58a95aab5b71cbd28a4b000000000',    # noqa: E501
@@ -67,6 +66,16 @@ class TestPrevouts(unittest.TestCase):
         res = prevouts.find_by_outpoint(self.test_prevouts['outpoint'])
         self.assertEqual(res[0], self.test_prevouts)
 
-    @unittest.skip('WIP')
     def test_find_unspents(self):
-        pass
+        unspent_prevout = {
+                'outpoint': '4f52a52d229bf6cef4dc24aee32c74c073862d5389c173e0f173dd105526809900000000',    # noqa: E501
+                'tx_id': '4f52a52d229bf6cef4dc24aee32c74c073862d5389c173e0f173dd1055268099',    # noqa: E501
+                'idx': 0,
+                'value': 41794084,
+                'spent_at': 0,
+                'spent_by': '',
+                'address': '1GniSeeH9Ui1ZK4eyoaopNP1TnQLEgQiFW'
+                }
+        prevouts.store_prevout(unspent_prevout)
+        res = prevouts.find_unspents(unspent_prevout['tx_id'])
+        self.assertEqual(res[0], unspent_prevout)
