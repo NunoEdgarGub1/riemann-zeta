@@ -2,8 +2,10 @@ import asyncio
 
 from zeta.sync import chain
 
+from typing import Optional
 
-async def zeta(header_q: asyncio.Queue) -> None:
+
+async def zeta(header_q: Optional[asyncio.Queue] = None) -> None:
     '''
     Main function. Starts the various tasks
     TODO: keep references to the tasks, and monitor them
@@ -14,5 +16,5 @@ async def zeta(header_q: asyncio.Queue) -> None:
 
 if __name__ == '__main__':
     # do the thing
-    asyncio.ensure_future(zeta(asyncio.Queue()))
+    asyncio.ensure_future(zeta())
     asyncio.get_event_loop().run_forever()
