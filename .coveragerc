@@ -2,6 +2,8 @@
 source = zeta/
 omit =
     zeta/tests/*
+    zeta/z.py
+    zeta/zeta_types.py
 
 [report]
 show_missing = True

@@ -17,7 +17,7 @@ PBKDF_ITERATIONS = 100000
 async def queue_forwarder(
         inq: asyncio.Queue,
         outq: asyncio.Queue,
-        transform: Optional[Callable[[Any], Any]] = None) -> None:
+        transform: Optional[Callable[[Any], Any]] = None) -> None:  # pragma: nocover  # noqa: E501
     '''
     Forwards everything from a queue to another queue
     Useful for combining queues
@@ -227,7 +227,7 @@ def decode_aes(
 # THE SOFTWARE.
 
 
-def to_pubkey(privkey_obj: ecdsa.SigningKey) -> bytes:
+def to_pubkey(privkey_obj: ecdsa.SigningKey) -> bytes:  # pragma: nocover
         """
         Return compressed public key encoding
         Adapted from prusnak's bip32utils
@@ -243,7 +243,7 @@ def to_pubkey(privkey_obj: ecdsa.SigningKey) -> bytes:
         return ck
 
 
-def pow_mod(x: int, y: int, z: int) -> int:
+def pow_mod(x: int, y: int, z: int) -> int:  # pragma: nocover
     '''
     int, int, int (or float)
     returns (x^y)mod z
@@ -257,7 +257,7 @@ def pow_mod(x: int, y: int, z: int) -> int:
     return number
 
 
-def uncompress_pubkey(pubkey: bytes) -> bytes:
+def uncompress_pubkey(pubkey: bytes) -> bytes:  # pragma: nocover
     '''
     takes a compressed pubkey, returns the uncompressed pubkey
     '''
