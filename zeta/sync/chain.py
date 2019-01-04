@@ -44,10 +44,10 @@ async def _track_chain_tip(outq: Optional[asyncio.Queue] = None) -> None:
     '''
     q: asyncio.Queue = asyncio.Queue()
     await electrum.subscribe_to_headers(q)
-    asyncio.ensure_future(header_queue_handler(q, outq))
+    asyncio.ensure_future(_header_queue_handler(q, outq))
 
 
-async def header_queue_handler(
+async def _header_queue_handler(
         inq: asyncio.Queue,
         outq: Optional[asyncio.Queue] = None) -> None:
     '''
@@ -85,7 +85,7 @@ async def _catch_up(from_height: int) -> None:
     # NB: we requested 2016. If we got back 2016, it's likely there are more
     if electrum_response['count'] == 2016:
         asyncio.ensure_future(_catch_up(from_height + 2014))
-    process_header_batch(electrum_response['hex'])
+    _process_header_batch(electrum_response['hex'])
 
 
 async def _maintain_db() -> None:
@@ -129,9 +129,9 @@ async def _status_updater() -> None:
         await asyncio.sleep(10)
 
 
-def process_header_batch(electrum_hex: str) -> None:
+def _process_header_batch(electrum_hex: str) -> None:
     '''
-    Processes a batch of headers
+    Processes a batch of headers and sends to the DB for storage
     Args:
         electrum_hex (str): The 'hex' attribute of electrum's getheaders res
     '''

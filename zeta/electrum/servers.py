@@ -206,18 +206,18 @@ SERVERS: List[Dict[str, Any]] = [
   "pruning_limit": 0,
   "seen_at": 1533670768.867786
  },
- {
-  "nickname": null,
-  "hostname": "bitcoin.cluelessperson.com",
-  "ip_addr": "172.92.140.254",
-  "ports": [
-   "s50002",
-   "t50001"
-  ],
-  "version": "1.2",
-  "pruning_limit": 0,
-  "seen_at": 1533670768.588772
- },
+ # {
+ #  "nickname": null,
+ #  "hostname": "bitcoin.cluelessperson.com",
+ #  "ip_addr": "172.92.140.254",
+ #  "ports": [
+ #   "s50002",
+ #   "t50001"
+ #  ],
+ #  "version": "1.2",
+ #  "pruning_limit": 0,
+ #  "seen_at": 1533670768.588772
+ # },
  {
   "nickname": null,
   "hostname": "bitcoin.corgi.party",

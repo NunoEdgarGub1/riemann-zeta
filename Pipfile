@@ -15,7 +15,7 @@ flake8 = "*"
 
 [packages]
 connectrum = "*"
-riemann-tx = "*"
+riemann-tx = "==1.1.6"
 ecdsa = "*"
 pycryptodomex = "*"
 

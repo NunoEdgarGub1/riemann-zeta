@@ -39,27 +39,39 @@ pipenv run python zeta/z.py
 ```python
 import asyncio
 
-from zeta import z, headers
+from zeta import z
+from zeta.db import headers
 
-asyncio.ensure_future(z.zeta())
+async def use_zeta():
 
-# NB: Chain sync may take some time, depending on your checkpoint
-#     You have to wait.
+    # if you pass in a queue, you can get access to the electrum subscription
+    header_q = asyncio.Queue()
+    asyncio.ensure_future(z.zeta(header_q=header_q))
 
-# returns a List of header dicts, heights are NOT (!!) unique
-headers.find_by_height(595959)  
-headers.find_highest()
+    # NB: Chain sync may take some time, depending on your checkpoint
+    #     You have to wait.
 
-# returns a List of header dicts. total difficulty is NOT (!!) unique
-headers.find_heaviest()
+    asyncio.sleep(60)
 
-# returns a header dict. hashes are unique
-# at least, if they aren't, we have bigger problems than Zeta breaking
-h = headers.find_by_hash("00000000000000000020ba2cdb900193eb8af323487a84621d45f2222e01f8c6")
+    # NB : returns a List of header dicts, heights are NOT (!!) unique
+    #      we store ALL HEADERS we hear of, including orphans
+    headers.find_by_height(595959)  
+    headers.find_highest()
 
-print(h['height'])
-print(h['merkle_root'])
-print(h['hex'])
+    # NB: returns a List of header dicts. total difficulty is NOT (!!) unique
+    headers.find_heaviest()
+
+    # NB: returns a header dict. hashes are unique
+    #     at least, if they aren't, we have bigger problems than Zeta breaking :)
+    h = headers.find_by_hash("00000000000000000020ba2cdb900193eb8af323487a84621d45f2222e01f8c6")
+
+    print(h['height'])
+    print(h['merkle_root'])
+    print(h['hex'])
+
+if __name__ == '__main__':
+    asyncio.ensure_future(use_zeta())
+    asyncio.run_forever()
 ```
 
 
@@ -92,7 +104,7 @@ pipenv install -d
 
 This will run the linter, the type checker, and then the unit tests.
 
-Provided anyone ever writes unit tests.
+We actually wrote a few unit tests
 
 ```
 tox
@@ -114,7 +126,7 @@ Not at the moment. Although it could pretty easily. If we wanted to move that di
 
 #### Why are the hardcoded servers and checkpoints in .py files?
 
-Pyinstaller does not support pkg_resources. Putting the servers in .py files ensures they can be packaged in executables
+pyinstaller does not support pkg_resources. Putting the servers in .py files ensures they can be packaged in executables
 
 #### What else?
 

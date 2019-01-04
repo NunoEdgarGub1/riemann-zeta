@@ -57,3 +57,12 @@ KeyEntry = TypedDict(
         'chain': str
     }
 )
+
+ElectrumGetHeadersResponse = TypedDict(
+    'ElectrumGetHeadersResponse',
+    {
+        'count': int,
+        'hex': str,
+        'max': int
+    }
+)

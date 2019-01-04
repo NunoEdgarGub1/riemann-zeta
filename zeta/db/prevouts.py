@@ -1,30 +1,51 @@
 import sqlite3
 
-from riemann.encoding import addresses as addr
 from riemann import utils as rutils
+from riemann.encoding import addresses as addr
 
 from zeta.db import connection
-from zeta.zeta_types import Prevout
+from zeta.zeta_types import Outpoint, Prevout
 
-from typing import cast, List, Optional
+from typing import Any, Dict, List, Optional
 
 
 def prevout_from_row(row: sqlite3.Row) -> Prevout:
-    return cast(Prevout, dict((k, row[k]) for k in row.keys()))
+    res: Prevout = {
+        'outpoint': Outpoint(tx_id=row['tx_id'], index=row['idx']),
+        'value': row['value'],
+        'spent_at': row['spent_at'],
+        'spent_by': row['spent_by'],
+        'address': row['address']}
+    return res
+
+
+def _flatten_outpoint(prevout: Prevout) -> Dict[str, Any]:
+    outpoint = '{tx_id}{index}'.format(
+        tx_id=prevout['outpoint']['tx_id'],
+        index=rutils.i2le_padded(prevout['outpoint']['index'], 4).hex())
+    return {
+        'outpoint': outpoint,
+        'tx_id': prevout['outpoint']['tx_id'],
+        'idx': prevout['outpoint']['index'],
+        'value': prevout['value'],
+        'spent_at': prevout['spent_at'],
+        'spent_by': prevout['spent_by'],
+        'address': prevout['address']
+    }
 
 
 def validate_prevout(prevout: Prevout) -> bool:
-    idx_bytes = rutils.i2le_padded(prevout['idx'], 4)
-
-    if prevout['outpoint'] != '{}{}'.format(prevout['tx_id'], idx_bytes.hex()):
-        return False
-
+    '''
+    Validates the internal structure of a prevout
+    '''
     if prevout['value'] <= 0:
+        print('bleh222')
         return False
 
     try:
         addr.parse_hash(prevout['address'])
     except ValueError:
+        print('bleh333')
         return False
 
     return True
@@ -34,12 +55,7 @@ def store_prevout(prevout: Prevout) -> bool:
     '''
     Stores a prevout in the database
     Args:
-        prevout (dict):
-            Outpoint (dict)
-            value (int)
-            address (str)
-            spent_at (str)
-            spent_by (str)
+        prevout (dict): the prevout
     Return:
         (bool): true if successful, false if error
     '''
@@ -47,6 +63,8 @@ def store_prevout(prevout: Prevout) -> bool:
 
     if not validate_prevout(prevout):
         return False
+
+    flattened = _flatten_outpoint(prevout)
 
     try:
         c.execute(
@@ -60,7 +78,44 @@ def store_prevout(prevout: Prevout) -> bool:
                 :spent_by,
                 :address)
             ''',
-            prevout)
+            flattened)
+        connection.commit()
+        return True
+    except Exception:
+        raise
+        return False
+    finally:
+        c.close()
+
+
+def batch_store_prevout(prevout_list: List[Prevout]) -> bool:
+    '''
+    Stores a batch of prevouts in the DB. Uses only one transaction
+    Args:
+        prevout_list (list(Prevout)): the prevouts to store
+    Returns:
+        (bool): True if prevouts were stored, false otherwise
+    '''
+    c = connection.get_cursor()
+
+    for prevout in prevout_list:
+        if not validate_prevout(prevout):
+            return False
+
+    try:
+        for prevout in prevout_list:
+            c.execute(
+                '''
+                INSERT OR REPLACE INTO prevouts VALUES (
+                    :outpoint,
+                    :tx_id,
+                    :idx,
+                    :value,
+                    :spent_at,
+                    :spent_by,
+                    :address)
+                ''',
+                prevout)
         connection.commit()
         return True
     except Exception:
@@ -112,15 +167,16 @@ def find_by_tx_id(tx_id: str) -> List[Prevout]:
         c.close()
 
 
-def find_by_outpoint(outpoint: str) -> Optional[Prevout]:
+def find_by_outpoint(outpoint: Outpoint) -> Optional[Prevout]:
     c = connection.get_cursor()
     try:
         res = [prevout_from_row(p) for p in c.execute(
             '''
             SELECT * from prevouts
-            WHERE outpoint = :outpoint
+            WHERE tx_id = :tx_id
+              AND idx = :index
             ''',
-            {'outpoint': outpoint}
+            outpoint
         )]
         for p in res:
             # little hacky. returns first entry
@@ -178,5 +234,57 @@ def find_by_value_range(
             {'upper_value': upper_value,
              'lower_value': lower_value})]
         return res
+    finally:
+        c.close()
+
+
+def find_spent_by_mempool_tx() -> List[Prevout]:
+    '''
+    Finds prevouts that have been spent by a tx in the mempool
+    Useful for checking if a tx can be replaced or has confirmed
+    '''
+    c = connection.get_cursor()
+    try:
+        # I don't like this.
+        # figure out how to do this without string format
+        res = [prevout_from_row(p) for p in c.execute(
+            '''
+            SELECT * from prevouts
+            WHERE spent_at == -1
+            ''')]
+        return res
+    finally:
+        c.close()
+
+
+def check_for_known_outpoints(
+        outpoint_list: List[Outpoint]) -> List[Outpoint]:
+    '''
+    Finds all prevouts we know of from a list of outpoints
+    Useful for checking whether the DB already knows about specific prevouts
+    '''
+    # NB: We want to flatten the outpoint to look it up in the DB
+    flattened_list: List[str] = []
+    print(outpoint_list)
+    for o in outpoint_list:
+        print(o)
+        flat_outpoint = '{tx_id}{index}'.format(
+            tx_id=o['tx_id'],
+            index=rutils.i2le_padded(o['index'], 4).hex())
+        flattened_list.append(flat_outpoint)
+
+    c = connection.get_cursor()
+    question_marks = ', '.join(['?' for _ in range(len(outpoint_list))])
+    try:
+        cursor = c.execute(
+            '''
+            SELECT tx_id, idx FROM prevouts
+            WHERE outpoint in ({question_marks})
+            '''.format(question_marks=question_marks),
+            flattened_list)
+        res = [Outpoint(tx_id=p['tx_id'], index=p['idx']) for p in cursor]
+        return res
+    except Exception:
+        return False
     finally:
         c.close()

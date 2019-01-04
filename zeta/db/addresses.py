@@ -175,3 +175,18 @@ def find_by_pubkey(pubkey: str) -> List[AddressEntry]:
         return res
     finally:
         c.close()
+
+
+def find_all_addresses() -> List[str]:
+    '''
+    Finds all addresses that we're tracking
+    '''
+    c = connection.get_cursor()
+    try:
+        return [r['address'] for r in c.execute(
+            '''
+            SELECT address FROM addresses
+            '''
+        )]
+    finally:
+        c.close()
