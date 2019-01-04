@@ -127,3 +127,18 @@ async def get_unspents(address: str) -> List[Dict[str, Any]]:
         return await client.RPC('blockchain.scripthash.listunspent', sh)
     except ValueError:
         return []
+
+
+async def get_history(address: str) -> List[Dict[str, Any]]:
+    '''
+    Args:
+        address          (str): the address to check
+    Returns:
+        (list(dict)): tx_hash (BE), height, fee
+    '''
+    client = await _get_client()
+    try:
+        sh = eutils.address_to_electrum_scripthash(address)
+        return await client.RPC('blockchain.scripthash.get_history', sh)
+    except ValueError:
+        return []

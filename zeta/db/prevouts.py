@@ -285,3 +285,18 @@ def check_for_known_outpoints(
         return False
     finally:
         c.close()
+
+
+def find_all() -> List[Prevout]:
+    '''
+    Finds all prevouts
+    '''
+    c = connection.get_cursor()
+    try:
+        res = [prevout_from_row(r) for r in c.execute(
+            '''
+            SELECT * FROM prevouts
+            ''')]
+        return res
+    finally:
+        c.close()
