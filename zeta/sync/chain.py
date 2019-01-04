@@ -4,10 +4,10 @@ from zeta import electrum
 from zeta.db import checkpoint, connection, headers
 
 from zeta.zeta_types import Header
-from typing import cast, List, Union
+from typing import cast, List, Optional, Union
 
 
-async def sync() -> None:
+async def sync(outq: Optional[asyncio.Queue] = None) -> None:
     '''
     Starts all header tracking processes
     1. subscribe to headers feed (track chain tip)
@@ -17,7 +17,7 @@ async def sync() -> None:
     '''
     last_known_height = _initial_setup()
     # NB: assume there hasn't been a 10 block reorg
-    asyncio.ensure_future(_track_chain_tip())
+    asyncio.ensure_future(_track_chain_tip(outq))
     asyncio.ensure_future(_catch_up(last_known_height))
     asyncio.ensure_future(_maintain_db())
     asyncio.ensure_future(_status_updater())
@@ -38,31 +38,36 @@ def _initial_setup() -> int:
     return cast(int, headers.find_highest()[0]['height'])
 
 
-async def _track_chain_tip() -> None:
+async def _track_chain_tip(outq: Optional[asyncio.Queue] = None) -> None:
     '''
     subscribes to headers, and starts the header queue handler
     '''
     q: asyncio.Queue = asyncio.Queue()
     await electrum.subscribe_to_headers(q)
-    asyncio.ensure_future(header_queue_handler(q))
+    asyncio.ensure_future(header_queue_handler(q, outq))
 
 
-async def header_queue_handler(q: asyncio.Queue) -> None:
+async def header_queue_handler(
+        inq: asyncio.Queue,
+        outq: Optional[asyncio.Queue] = None) -> None:
     '''
     Handles a queue of incoming headers. Ingests each individually
     Args:
         q (asyncio.Queue): the queue of headers awaiting ingestion
     '''
     while True:
-        header = await q.get()
+        header = await inq.get()
         print('got header in queue')
 
         # NB: the initial result and subsequent notifications are inconsistent
         try:
             hex_header = header[0]['hex']
+            if outq is not None:
+                outq.put(header[0])
         except Exception:
             hex_header = header['hex']
-        print(hex_header)
+            if outq is not None:
+                outq.put(header)
         headers.store_header(hex_header)
 
 
@@ -87,7 +92,6 @@ async def _maintain_db() -> None:
     Loop that checks the DB for headers at height 0
     Restoring them attempts to connect them to another known header
     '''
-    print('starting maintenance coro')
     while True:
         await asyncio.sleep(60)
 
