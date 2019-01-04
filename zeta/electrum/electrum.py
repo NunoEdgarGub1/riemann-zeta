@@ -90,6 +90,27 @@ async def get_tx_verbose(tx_id: str) -> Optional[Dict[str, Any]]:
         return None
 
 
+async def subscribe_to_address(
+        address: str,
+        outq: asyncio.Queue) -> None:
+    '''
+    Subscribes to an address.
+    NB: Subscribing only triggers notification of updates
+        It does NOT give any info about what the update is :(
+
+    Args:
+        address (str): the address to subscribe to
+    '''
+    client = await _get_client()
+    try:
+        sh = eutils.address_to_electrum_scripthash(address)
+        fut, q = client.subscribe('blockchain.scripthash.subscribe', sh)
+        await outq.put(await fut)
+        asyncio.ensure_future(utils.queue_forwarder(q, outq))
+    except ValueError:
+        pass
+
+
 async def subscribe_to_addresses(
         address_list: List[str],
         outq: asyncio.Queue) -> None:
@@ -99,7 +120,6 @@ async def subscribe_to_addresses(
         It does NOT give any info about what the update is :(
 
     Args:
-        client   (StratumClient): Electrum server client
         address_list (list(str)): the addresses to subscribe to
         outq     (asyncio.Queue): a queue to route incoming events to
     '''

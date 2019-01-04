@@ -9,6 +9,7 @@ from zeta.zeta_types import Prevout
 
 async def sync(outq: Optional[asyncio.Queue] = None) -> None:
     asyncio.ensure_future(_track_known_addresses(outq))
+    asyncio.ensure_future(_maintain_db(outq))
 
 
 async def _track_known_addresses(outq: Optional[asyncio.Queue]) -> None:
@@ -18,25 +19,44 @@ async def _track_known_addresses(outq: Optional[asyncio.Queue]) -> None:
     '''
     tracked = []
     while True:
+        # Find the addresses we know
         known_addrs = addresses.find_all_addresses()
+
+        # Figure out which ones we aren't already tracking and track them
         untracked = list(filter(lambda a: a not in tracked), known_addrs)
+
+        # record that we tracked each of them
         for addr in untracked:
             tracked.append(addr)
             asyncio.ensure_future(_get_address_unspents(addr, outq))
             asyncio.ensure_future(_sub_to_address(addr, outq))
-        asyncio.sleep(10)
+
+        # wait 10 seconds and repeat
+        await asyncio.sleep(10)
 
 
 async def _sub_to_address(
-        addr: str,
+        addr: List[str],
         outq: Optional[asyncio.Queue] = None) -> None:
-    ...
+    '''
+    subs to address and registers a handler
+    '''
+    intermediate_q: asyncio.Queue = asyncio.Queue()
+    await electrum.subscribe_to_address(addr, intermediate_q)
+
+    asyncio.ensure_future(_address_sub_handler(intermediate_q, outq))
 
 
 async def _address_sub_handler(
+        address: str,
         inq: asyncio.Queue,
         outq: Optional[asyncio.Queue]) -> None:
-    ...
+    while True:
+        # wait for a subscription event
+        # it contains no information, so we can discard it
+        await inq.get()
+        # update our view of the unspents
+        asyncio.ensure_futre(_get_address_unspents(address, outq))
 
 
 async def _get_address_unspents(
@@ -134,9 +154,19 @@ async def _update_recently_spent(
                 # if the TX spent our prevout, get its hash for spent_by
                 # and its block height for spent_at
                 prevout['spent_by'] = tx['hash']
-                header = headers.find_by_hash(tx['blockhash'])
-                prevout['spent_at'] = (header['height']
-                                       if header is not None else -2)
+                if 'blockhash' not in tx:
+                    # it's in the mempool right now
+                    prevout['spent_at'] = -1
+                elif 'blockhash' in tx:
+                    header = headers.find_by_hash(tx['blockhash'])
+                    if header is not None:
+                        # we found its header
+                        prevout['spent_at'] = header['height']
+                    else:
+                        # we don't know its header, toss it back for later
+                        prevout['spent_at'] = -2
+                # we have assigned a spent_by and height. write it to the db.
+                prevouts.store_prevout(prevout)
 
 
 async def _maintain_db(
@@ -185,4 +215,4 @@ async def _update_children_in_mempool(
                 continue
 
         # run again in 10 minutes
-        asyncio.sleep(600)
+        await asyncio.sleep(600)
