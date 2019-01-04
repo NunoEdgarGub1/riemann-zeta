@@ -1,5 +1,6 @@
 import sqlite3
 import unittest
+from unittest import mock
 
 from zeta.db import addresses, connection
 
@@ -102,6 +103,11 @@ class TestAddresses(unittest.TestCase):
         self.assertFalse(addresses.store_address('38389383838'))
         self.assertFalse(addresses.store_address({}))
 
+    @mock.patch('zeta.db.addresses.validate_address')
+    def test_store_address_generic_fail(self, mock_val):
+        mock_val.return_value = True
+        self.assertFalse(addresses.store_address({}))
+
     def test_find_associated_pubkeys(self):
         res = addresses.find_associated_pubkeys(self.test_address['script'])
         self.assertEqual(res, self.test_address['script_pubkeys'])
@@ -119,3 +125,11 @@ class TestAddresses(unittest.TestCase):
     def test_find_by_pubkey(self):
         res = addresses.find_by_pubkey(self.test_address['script_pubkeys'][0])
         self.assertEqual(len(res), 3)
+
+    def test_find_all_addresses(self):
+        stored = [self.test_address, self.test_msig, self.test_msig_legacy]
+
+        res = addresses.find_all_addresses()
+        self.assertEqual(
+            sorted(res),
+            sorted([a['address'] for a in stored]))

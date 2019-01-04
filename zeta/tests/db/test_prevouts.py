@@ -1,6 +1,7 @@
 import sqlite3
 
 import unittest
+from unittest import mock
 
 from zeta.db import addresses, connection, prevouts
 
@@ -37,12 +38,46 @@ class TestPrevouts(unittest.TestCase):
     def tearDown(self):
         connection.CONN = self._old_conn
 
-    @unittest.skip('WIP')
+    def test_validate_prevout(self):
+        # nothing
+        self.assertFalse(prevouts.validate_prevout({}))
+        # value can't be negative
+        self.assertFalse(prevouts.validate_prevout({'value': -1}))
+        # bad address
+        self.assertFalse(prevouts.validate_prevout(
+            {'address': '383838', 'value': 100}))
+
     def test_store_prevout(self):
-        ...
+        # fails validation
+        self.assertFalse(prevouts.store_prevout({}))
+
+    @mock.patch('zeta.db.prevouts.validate_prevout')
+    def test_store_prevout_general_failure(self, mock_val):
+        mock_val.return_value = True
+        self.assertFalse(prevouts.store_prevout({}))
+
+    def test_batch_store_prevouts(self):
+        p_list = [{
+            'outpoint': {
+                'tx_id': '33' * 32,  # noqa: E501
+                'index': i},
+            'value': 333333333,
+            'spent_at': 5555,
+            'spent_by': '44' * 32,  # noqa: E501
+            'address': '36gWkx1AR4ABH9nqzzsRJ6NFMedHw6QzW3'}
+            for i in range(0, 10)]
+        self.assertTrue(prevouts.batch_store_prevout(p_list))
+        p_list.append({})
+        self.assertFalse(prevouts.batch_store_prevout(p_list))
+
+    @mock.patch('zeta.db.prevouts.validate_prevout')
+    def test_batch_store_prevouts_general_failure(self, mock_val):
+        mock_val.return_value = True
+        p_list = [{}, {}]
+        self.assertFalse(prevouts.batch_store_prevout(p_list))
 
     def test_prevout_from_row(self):
-        print(
+        self.assertEqual(
             prevouts.prevout_from_row(self.prevout_as_row),
             self.prevout)
 
@@ -65,6 +100,9 @@ class TestPrevouts(unittest.TestCase):
         self.assertEqual(
             prevouts.find_by_outpoint(self.prevout['outpoint']),
             self.prevout)
+        self.assertIsNone(prevouts.find_by_outpoint({
+            'tx_id': '99' * 32,
+            'index': 1393983983}))
 
     def test_find_all_unspents(self):
         self.assertEqual(
@@ -94,3 +132,25 @@ class TestPrevouts(unittest.TestCase):
         self.assertEqual(
             prevouts.check_for_known_outpoints([self.prevout['outpoint']]),
             [self.prevout['outpoint']])
+
+    def test_find_spent_by_mempool_tx(self):
+        self.assertEqual(
+            prevouts.find_spent_by_mempool_tx(),
+            [])
+
+        mempool_spent = {
+            'outpoint': {
+                'tx_id': '83' * 32,  # noqa: E501
+                'index': 83},
+            'value': 333333333,
+            'spent_at': -1,
+            'spent_by': '21' * 32,  # noqa: E501
+            'address': '36gWkx1AR4ABH9nqzzsRJ6NFMedHw6QzW3'}
+        prevouts.store_prevout(mempool_spent)
+
+        self.assertEqual(
+            prevouts.find_spent_by_mempool_tx(),
+            [mempool_spent])
+
+    def test_find_all(self):
+        prevouts.find_all()

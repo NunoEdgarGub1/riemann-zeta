@@ -1,5 +1,6 @@
 import sqlite3
 import unittest
+from unittest import mock
 
 from zeta import utils
 from zeta.db import addresses, connection, keys
@@ -39,11 +40,19 @@ class TestKeys(unittest.TestCase):
             keys.key_from_row(self.enc_test_key, self.secret),
             self.test_key)
 
-    @unittest.skip('WIP')
     def test_store_key(self):
-        ...
+        self.assertFalse(keys.store_key({}, self.secret))
+
+    @mock.patch('zeta.db.keys.validate_key')
+    def test_store_general_failure(self, mock_val):
+        mock_val.return_value = True
+
+        self.assertFalse(keys.store_key({}, self.secret))
 
     def test_validate_key(self):
+        # missing keys
+        self.assertFalse(keys.validate_key({}))
+
         # bad address
         self.assertFalse(keys.validate_key(
             {
@@ -56,7 +65,7 @@ class TestKeys(unittest.TestCase):
         # bad pubkey
         self.assertFalse(keys.validate_key(
             {
-                'pubkey': '0379a0ac5aa3a2efba0cfab8370816580ae3a561be7e4b47c59cf8c35e38beef08',  # noqa: E501
+                'pubkey': '0979a0ac5aa3a2efba0cfab8370816580ae3a561be7e4b47c59cf8c35e38beef08',  # noqa: E501
                 'privkey': b'\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f !"#$%&\'()*+,-./01',  # noqa: E501
                 'derivation': '',
                 'chain': 'btc',
@@ -75,6 +84,8 @@ class TestKeys(unittest.TestCase):
     def test_find_by_address(self):
         res = keys.find_by_address(self.test_key['address'], self.secret)
         self.assertEqual(res, self.test_key)
+
+        self.assertIsNone(keys.find_by_address('fake address', self.secret))
 
     def test_find_by_pubkey(self):
         res = keys.find_by_pubkey(self.test_key['pubkey'], self.secret)

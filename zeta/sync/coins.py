@@ -205,7 +205,8 @@ async def _update_children_in_mempool(
                 continue
 
             # NB: we'll accept 10 confirmations as VERY unlikely to roll back
-            #     If it has 10+ confs, update its `spent_at` and store
+            #     if it has 10+ confs, update its `spent_at` and store
+            #     we should also notify the frontend that we found it
             if tx_details['confirmations'] >= 10:
                 confirming = headers.find_by_hash(tx_details['blockhash'])
                 prevout['spent_at'] = confirming['height']

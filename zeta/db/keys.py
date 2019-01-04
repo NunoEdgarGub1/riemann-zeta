@@ -21,16 +21,38 @@ def key_from_row(row: sqlite3.Row, secret_phrase: str) -> KeyEntry:
     return res
 
 
+def validate_key(k: KeyEntry) -> bool:
+    '''
+    Checks internal consistency of a key entry
+    '''
+    # missing expected keys, prevents runtime errors later in this method
+    if set(['pubkey', 'privkey', 'address']) - set(k.keys()) != set():
+        return False
+
+    # pubkey is malformatted
+    if not utils.is_pubkey(k['pubkey']):
+        return False
+
+    # pubkey matches privkey
+    if k['pubkey'] != utils.to_pubkey(utils.coerce_key(k['privkey'])).hex():
+        return False
+
+    # address matches pubkey
+    if k['address'] != addr.make_p2wpkh_address(bytes.fromhex(k['pubkey'])):
+        return False
+
+    return True
+
+
 def store_key(key_entry: KeyEntry, secret_phrase: str) -> bool:
     if not validate_key(key_entry):
         return False
 
     k = key_entry.copy()
 
-    k['privkey'] = utils.encode_aes(k['privkey'], secret_phrase)
-
     c = connection.get_cursor()
     try:
+        k['privkey'] = utils.encode_aes(k['privkey'], secret_phrase)
         c.execute(
             '''
             INSERT OR IGNORE INTO addresses VALUES (
@@ -54,25 +76,6 @@ def store_key(key_entry: KeyEntry, secret_phrase: str) -> bool:
         return False
     finally:
         c.close()
-
-
-def validate_key(k: KeyEntry) -> bool:
-    '''
-    Checks internal consistency of a key entry
-    '''
-    # pubkey is malformatted
-    if not utils.is_pubkey(k['pubkey']):
-        return False
-
-    # pubkey matches privkey
-    if k['pubkey'] != utils.to_pubkey(utils.coerce_key(k['privkey'])).hex():
-        return False
-
-    # address matches pubkey
-    if k['address'] != addr.make_p2wpkh_address(bytes.fromhex(k['pubkey'])):
-        return False
-
-    return True
 
 
 def find_by_address(address: str, secret_phrase: str) -> Optional[KeyEntry]:

@@ -38,12 +38,11 @@ def validate_prevout(prevout: Prevout) -> bool:
     '''
     Validates the internal structure of a prevout
     '''
-    if prevout['value'] <= 0:
-        return False
-
     try:
+        if prevout['value'] <= 0:
+            return False
         addr.parse_hash(prevout['address'])
-    except ValueError:
+    except Exception:
         return False
 
     return True
@@ -62,9 +61,8 @@ def store_prevout(prevout: Prevout) -> bool:
     if not validate_prevout(prevout):
         return False
 
-    flattened = _flatten_outpoint(prevout)
-
     try:
+        flattened = _flatten_outpoint(prevout)
         c.execute(
             '''
             INSERT OR REPLACE INTO prevouts VALUES (
@@ -80,7 +78,6 @@ def store_prevout(prevout: Prevout) -> bool:
         connection.commit()
         return True
     except Exception:
-        raise
         return False
     finally:
         c.close()
@@ -100,8 +97,8 @@ def batch_store_prevout(prevout_list: List[Prevout]) -> bool:
         if not validate_prevout(prevout):
             return False
 
-    flattened_list = list(map(_flatten_outpoint, prevout_list))
     try:
+        flattened_list = list(map(_flatten_outpoint, prevout_list))
         for prevout in flattened_list:
             c.execute(
                 '''
@@ -125,16 +122,10 @@ def batch_store_prevout(prevout_list: List[Prevout]) -> bool:
 
 def find_by_address(address: str) -> List[Prevout]:
     '''
-    Finds prevouts by associated address.
+    Finds prevouts by associated address
+    One address may have many prevouts
     Args:
         address (str):
-    Returns:
-        dict:
-            outpoint    (dict): Outpoint
-            value       (int): tx value in satoshis
-            address     (str):
-            spent_at    (int): block height tx was spent
-            spent_by    (str): txid of spend tx
     '''
     c = connection.get_cursor()
 
@@ -145,8 +136,6 @@ def find_by_address(address: str) -> List[Prevout]:
             WHERE address = :address
             ''',
             {'address': address})]
-    except Exception:
-        raise
     finally:
         c.close()
 
@@ -271,18 +260,16 @@ def check_for_known_outpoints(
         flattened_list.append(flat_outpoint)
 
     c = connection.get_cursor()
-    question_marks = ', '.join(['?' for _ in range(len(outpoint_list))])
     try:
+        question_marks = ', '.join(['?' for _ in range(len(outpoint_list))])
         cursor = c.execute(
             '''
             SELECT tx_id, idx FROM prevouts
-            WHERE outpoint in ({question_marks})
+            WHERE outpoint IN ({question_marks})
             '''.format(question_marks=question_marks),
             flattened_list)
         res = [Outpoint(tx_id=p['tx_id'], index=p['idx']) for p in cursor]
         return res
-    except Exception:
-        return False
     finally:
         c.close()
 

@@ -5,7 +5,7 @@ import sqlite3
 
 # TODO: Clean all this up and make better
 
-def ensure_directory(p) -> None:
+def ensure_directory(p) -> None:  # pragma: nocover
     '''
     Creates the PATH data directory if it does not already exist
     '''
@@ -14,9 +14,9 @@ def ensure_directory(p) -> None:
 
 
 if sys.platform.startswith('win'):
-    PATH_ROOT = os.path.expandvars(r'%LOCALAPPDATA%')
+    PATH_ROOT = os.path.expandvars(r'%LOCALAPPDATA%')  # pragma: nocover
 else:
-    PATH_ROOT = os.path.expanduser('~')
+    PATH_ROOT = os.path.expanduser('~')  # pragma: nocover
 
 DEFAULT_PATH = os.path.join(PATH_ROOT, '.summa', 'zeta')
 
@@ -102,7 +102,7 @@ def ensure_tables() -> bool:
         c.close()
 
 
-def print_tables() -> None:
+def print_tables() -> None:  # pragma: nocover
     c = get_cursor()
     res = c.execute('''
        SELECT name FROM sqlite_master WHERE type="table"

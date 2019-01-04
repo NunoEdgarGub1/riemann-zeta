@@ -66,7 +66,7 @@ def store_address(address: Union[str, AddressEntry]) -> bool:
     if type(address) is str:
         a = {
             'address': address,
-            'script': None,
+            'script': b'',
             'script_pubkeys': []
         }
     else:
