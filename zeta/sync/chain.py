@@ -60,15 +60,16 @@ async def header_queue_handler(
         print('got header in queue')
 
         # NB: the initial result and subsequent notifications are inconsistent
+        #     so we try to unwrap it from a list
         try:
-            hex_header = header[0]['hex']
-            if outq is not None:
-                outq.put(header[0])
+            header_dict = header[0]
         except Exception:
-            hex_header = header['hex']
-            if outq is not None:
-                outq.put(header)
-        headers.store_header(hex_header)
+            header_dict = header
+
+        headers.store_header(header_dict['hex'])
+
+        if outq is not None:
+            await outq.put(header)
 
 
 async def _catch_up(from_height: int) -> None:
