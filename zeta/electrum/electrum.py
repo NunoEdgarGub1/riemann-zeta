@@ -3,7 +3,7 @@ import asyncio
 from riemann import tx
 
 from zeta import utils
-from zeta.db import eutils
+from zeta.electrum import eutils
 from zeta.electrum.metaclient import MetaClient
 
 from typing import Any, Dict, List, Optional

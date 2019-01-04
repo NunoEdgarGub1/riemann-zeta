@@ -45,7 +45,9 @@ async def _get_address_unspents(
         [p['outpoint'] for p in prevout_list])
 
     # filter any we already know about
-    prevout_list = list(filter(lambda p: p['outpoint'] not in known_outpoints))
+    prevout_list = list(filter(
+        lambda p: p['outpoint'] not in known_outpoints,
+        prevout_list))
 
     # send new ones to the outq if present
     if outq is not None:
@@ -89,6 +91,10 @@ async def _maintain_db() -> None:
 
 
 async def _update_children_in_mempool() -> None:
+    '''
+    Periodically checks the DB for mempool txns that spend our prevouts
+    If the txn has moved from the mempool and been confirmed 10x we update it
+    '''
     while True:
         # NB: sleep at the end so that this runs once at startup
 
@@ -115,4 +121,5 @@ async def _update_children_in_mempool() -> None:
                 prevouts.store_prevout[prevout]
                 continue
 
+        # run again in 10 minutes
         asyncio.sleep(600)

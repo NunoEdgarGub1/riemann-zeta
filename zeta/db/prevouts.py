@@ -39,13 +39,11 @@ def validate_prevout(prevout: Prevout) -> bool:
     Validates the internal structure of a prevout
     '''
     if prevout['value'] <= 0:
-        print('bleh222')
         return False
 
     try:
         addr.parse_hash(prevout['address'])
     except ValueError:
-        print('bleh333')
         return False
 
     return True
@@ -102,8 +100,9 @@ def batch_store_prevout(prevout_list: List[Prevout]) -> bool:
         if not validate_prevout(prevout):
             return False
 
+    flattened_list = list(map(_flatten_outpoint, prevout_list))
     try:
-        for prevout in prevout_list:
+        for prevout in flattened_list:
             c.execute(
                 '''
                 INSERT OR REPLACE INTO prevouts VALUES (
@@ -265,9 +264,7 @@ def check_for_known_outpoints(
     '''
     # NB: We want to flatten the outpoint to look it up in the DB
     flattened_list: List[str] = []
-    print(outpoint_list)
     for o in outpoint_list:
-        print(o)
         flat_outpoint = '{tx_id}{index}'.format(
             tx_id=o['tx_id'],
             index=rutils.i2le_padded(o['index'], 4).hex())
