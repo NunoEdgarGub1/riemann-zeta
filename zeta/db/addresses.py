@@ -4,7 +4,7 @@ from riemann import utils as rutils
 from riemann.encoding import addresses as addr
 from riemann.script import serialization as script_ser
 
-from zeta import utils
+from zeta import crypto
 from zeta.db import connection
 
 from zeta.zeta_types import AddressEntry
@@ -51,7 +51,7 @@ def pubkeys_from_script(script: bytes) -> List[str]:
     res: List[str] = []
     s = script_ser.deserialize(script)
     for token in s.split():
-        if utils.is_pubkey(token):
+        if crypto.is_pubkey(token):
             res.append(token)
     return res
 

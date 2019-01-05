@@ -17,18 +17,22 @@ class MetaClient():
         self._clients = []
         self._servers = []
         self.protocol_version = "1.2"
-        self.user_agent = 'zeta'
+        self.user_agent = 'riemann-zeta'
 
-        self._num_clients = 2
-        self._random_set_size = 2
-        self._timeout_seconds = 5
+        self._num_clients = 2   # how many servers to connect to
+        self._random_set_size = 2  # how many servers to send each RPC
+        self._timeout_seconds = 5  # how long to wait for a server response
 
-    async def _keepalive(self, c: StratumClient) -> None:
+    async def _keepalive(self, c: StratumClient) -> None:  # pragma: nocover
+        '''
+        Pings a server every 100 seconds to keep a connection alive
+        '''
         while True:
             await asyncio.sleep(100)
             try:
                 await c.RPC('server.ping')
             except Exception:
+                # remove from our list of clients if it errors
                 self._clients = list(filter(lambda k: k != c, self._clients))
                 break  # exit the loop at the first error
 
@@ -86,22 +90,34 @@ class MetaClient():
         '''
         Takes an array of awaitables, returns the most common result
         '''
+        # gather waits for all coros to finish
         res = await asyncio.gather(*coros, return_exceptions=True)
+
+        # TODO: improve handling here. sometimes we might expect errors
+        # filter out electrum error responses
         res = list(filter(lambda k: type(k) is not ElectrumErrorResponse, res))
+
+        # if we get any response,
         if len(res) != 0:
+            # select the most popular one
             res = max(res, key=res.count)
+            # if our coros errored, we want to know.
             if issubclass(type(res), Exception):
                 raise res
             else:
                 return res
+        # if we don't get any response or error, return None
         return None
 
     async def RPC(self, *args: Any) -> Any:
         '''
         Calls an electrum RPC on multiple clients
         '''
+        # choose a random set of our clients and ask their RPC
         client_set = random.choices(self._clients, k=self._random_set_size)
         coros = [c.RPC(*args) for c in client_set]
+
+        # send those coros for aggregation
         return await self._aggregate_results(coros)
 
     def subscribe(self, *args) -> Tuple[Awaitable, asyncio.Queue]:
@@ -122,19 +138,30 @@ class MetaClient():
             self,
             qs: List[asyncio.Queue],
             outq: asyncio.Queue) -> None:
-        filter_queue: asyncio.Queue = asyncio.Queue()
-        sent: List[Any] = []
+        '''
+        Aggregates events on the subscription queues.
+        Keeps a record of the events it has seen, doesn't double send
 
+        Usage note: this should only be used when we generally expect to get
+            the same messages around the same time.
+
+        Args:
+            qs: the subscription Queues
+            outq: events we don't filter will be put here
+        '''
+        # FIXME: This could drop messages if they come fast
+        filter_queue: asyncio.Queue = asyncio.Queue()
+        seen_once: List[Any] = []
+
+        # this aggregates all the subs to one queue
         for q in qs:
             asyncio.ensure_future(utils.queue_forwarder(q, filter_queue))
 
         while True:
-            msgs = [await filter_queue.get()]
-            await asyncio.sleep(3)
-            while not filter_queue.empty():
-                msgs.append(filter_queue.get_nowait())
-            if len(msgs) >= 1:
-                msg = max(msgs, key=msgs.count)
-                if msg not in sent:
-                    sent.append(msg)
-                    await outq.put(msg)
+            # Wait for a message in the queue
+            msg = await filter_queue.get()
+
+            if msg in seen_once:
+                await outq.put(msg)
+            else:
+                seen_once.append(msg)

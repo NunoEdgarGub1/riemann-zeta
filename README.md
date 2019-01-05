@@ -15,7 +15,7 @@ Zeta starts from a checkpoint, which are hardcoded. It ranks blocks by accumulat
 ## Installation
 
 ```
-pip install riemann-zeta
+$ pip install riemann-zeta
 ```
 
 ## Configuration
@@ -24,15 +24,15 @@ Yes, surprisingly. We have two configuration environment variables.
 Make sure they're set BEFORE you import zeta.
 
 ```
-export ZETA_DB_PATH="/absolute/path/to/db/directory"
-export ZETA_DB_NAME="yourdb.name"
+$ export ZETA_DB_PATH="/absolute/path/to/db/directory"
+$ export ZETA_DB_NAME="yourdb.name"
 ```
 
 ## Usage
 
 ### Command line (non-interactive, just syncs the db)
 ```
-pipenv run python zeta/z.py
+$ pipenv run python zeta/z.py
 ```
 
 ### Programmatically:
@@ -77,27 +77,12 @@ if __name__ == '__main__':
 
 ## Header Format
 
-``` python
-# https://blockstream.info/block/00000000000000000020ba2cdb900193eb8af323487a84621d45f2222e01f8c6
-{  # It's a dict, not an object
-    'hash': '00000000000000000020ba2cdb900193eb8af323487a84621d45f2222e01f8c6',
-    'version': 536870912,
-    'prev_block': '0000000000000000001cd1aec2e9e7e576a157c5d74f3e09af7f536924ca9891',
-    'merkle_root': '4cdee1106ad3b739d66f29913efc71e4d087f7e7dbc4cf2b852532e078b43b1d',
-    'timestamp': 1544487446,
-    'nbits': '7cd93117',
-    'nonce': 'af1c036e',
-    'difficulty': 5646403851534,
-    'hex': '000000209198ca2469537faf093e4fd7c557a176e5e7e9c2aed11c0000000000000000004cdee1106ad3b739d66f29913efc71e4d087f7e7dbc4cf2b852532e078b43b1d16020f5c7cd93117af1c036e',
-    'height': 553333,  # will be 0 if the parent's height is unknown
-    'accumulated_work': 303123758060231297  #  will be 0 if the parent's accumulated_work is unknown
-}
-```
+See all types in `zeta/zeta_types.py`
 
 ## Development
 
 ```
-pipenv install -d
+$ pipenv install -d
 ```
 
 ### Running tests
@@ -107,7 +92,7 @@ This will run the linter, the type checker, and then the unit tests.
 We actually wrote a few unit tests
 
 ```
-tox
+$ tox
 ```
 
 ## Infrequently asked questions

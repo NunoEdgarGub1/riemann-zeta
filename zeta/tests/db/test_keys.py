@@ -2,7 +2,7 @@ import sqlite3
 import unittest
 from unittest import mock
 
-from zeta import utils
+from zeta import crypto
 from zeta.db import addresses, connection, keys
 
 
@@ -25,8 +25,8 @@ class TestKeys(unittest.TestCase):
             'address': 'bc1q3mp3sj3x65y6xcnhcw2qkdhnk6hg9shutrm23s'}
 
         encrypted = self.test_key.copy()
-        encrypted['privkey'] = utils.encode_aes(encrypted['privkey'],
-                                                self.secret)
+        encrypted['privkey'] = crypto.encode_aes(encrypted['privkey'],
+                                                 self.secret)
         self.enc_test_key = encrypted
 
         self.assertTrue(keys.store_key(self.test_key, self.secret))

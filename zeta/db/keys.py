@@ -1,6 +1,6 @@
 import sqlite3
 
-from zeta import utils
+from zeta import crypto
 from zeta.db import connection
 
 from riemann.encoding import addresses as addr
@@ -14,7 +14,7 @@ def key_from_row(row: sqlite3.Row, secret_phrase: str) -> KeyEntry:
     Does what it says on the tin
     '''
 
-    privkey = utils.decode_aes(row['privkey'], secret_phrase)
+    privkey = crypto.decode_aes(row['privkey'], secret_phrase)
 
     res = cast(KeyEntry, dict((k, row[k]) for k in row.keys()))
     res['privkey'] = privkey
@@ -30,11 +30,11 @@ def validate_key(k: KeyEntry) -> bool:
         return False
 
     # pubkey is malformatted
-    if not utils.is_pubkey(k['pubkey']):
+    if not crypto.is_pubkey(k['pubkey']):
         return False
 
     # pubkey matches privkey
-    if k['pubkey'] != utils.to_pubkey(utils.coerce_key(k['privkey'])).hex():
+    if k['pubkey'] != crypto.to_pubkey(crypto.coerce_key(k['privkey'])).hex():
         return False
 
     # address matches pubkey
@@ -52,7 +52,7 @@ def store_key(key_entry: KeyEntry, secret_phrase: str) -> bool:
 
     c = connection.get_cursor()
     try:
-        k['privkey'] = utils.encode_aes(k['privkey'], secret_phrase)
+        k['privkey'] = crypto.encode_aes(k['privkey'], secret_phrase)
         c.execute(
             '''
             INSERT OR IGNORE INTO addresses VALUES (

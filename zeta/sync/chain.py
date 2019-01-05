@@ -20,7 +20,7 @@ async def sync(outq: Optional[asyncio.Queue] = None) -> None:
     asyncio.ensure_future(_track_chain_tip(outq))
     asyncio.ensure_future(_catch_up(last_known_height))
     asyncio.ensure_future(_maintain_db())
-    asyncio.ensure_future(_status_updater())
+    # asyncio.ensure_future(_status_updater())
 
 
 def _initial_setup() -> int:
@@ -57,7 +57,6 @@ async def _header_queue_handler(
     '''
     while True:
         header = await inq.get()
-        print('got header in queue')
 
         # NB: the initial result and subsequent notifications are inconsistent
         #     so we try to unwrap it from a list
@@ -103,30 +102,6 @@ async def _maintain_db() -> None:
         # NB: this will attempt to find their parent and fill in height/accdiff
         for header in floating:
             headers.store_header(header)
-
-
-async def _status_updater() -> None:
-    '''
-    Prints stats about the heaviest (best) block every 10 seconds
-    '''
-    best = None
-    while True:
-        heaviest = headers.find_heaviest()
-
-        # it'd be very strange if this failed
-        # but I put in the check, which implies that it happened in testing
-        if len(heaviest) != 0:
-            if best and heaviest[0]['height'] > best['height']:
-                print('chain tip advanced {} blocks'.format(
-                    heaviest[0]['height'] - best['height']
-                ))
-            best = heaviest[0]
-            print('Best Block: {} at {} with {} work'.format(
-                best['hash'],
-                best['height'],
-                best['accumulated_work']
-            ))
-        await asyncio.sleep(10)
 
 
 def _process_header_batch(electrum_hex: str) -> None:

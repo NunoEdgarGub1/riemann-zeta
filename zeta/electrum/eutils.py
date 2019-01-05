@@ -10,5 +10,10 @@ def address_to_electrum_scripthash(address: str) -> str:
     Returns:
         (str): the electrum-formatted scripthash in hex
     '''
-    scripthash = rutils.sha256(addr.to_output_script(address))
+    try:
+        e = addr.to_output_script(address)
+    except ValueError:
+        raise
+    scripthash = rutils.sha256(e)
+
     return scripthash[::-1].hex()

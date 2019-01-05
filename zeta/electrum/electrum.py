@@ -12,7 +12,7 @@ from zeta.zeta_types import ElectrumGetHeadersResponse
 _CLIENT: Optional[MetaClient] = None
 
 
-async def _get_client() -> MetaClient:
+async def _get_client() -> MetaClient:  # pragma: nocover
     '''
     TODO: Improve
     Gets a singleton metaclient
@@ -108,7 +108,7 @@ async def subscribe_to_address(
         await outq.put(await fut)
         asyncio.ensure_future(utils.queue_forwarder(q, outq))
     except ValueError:
-        pass
+        return
 
 
 async def subscribe_to_addresses(
