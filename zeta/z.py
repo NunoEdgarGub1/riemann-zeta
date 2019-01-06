@@ -35,14 +35,10 @@ async def _status_updater() -> None:
 
 async def _report_new_headers(header_q) -> None:
     # print header hashes as they come in
-    def make_block_hash(header) -> str:
+    def make_block_hash(h) -> str:
         # print the header hash in a human-readable format
-        try:
-            header_dict = header[0]
-        except Exception:
-            header_dict = header
         return('new header: {}'.format(
-            crypto.hash256(bytes.fromhex(header_dict['hex']))[::-1].hex()))
+            crypto.hash256(bytes.fromhex(h['hex']))[::-1].hex()))
     asyncio.ensure_future(utils.queue_printer(header_q, make_block_hash))
 
 

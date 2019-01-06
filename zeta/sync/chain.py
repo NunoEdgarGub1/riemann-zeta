@@ -65,7 +65,7 @@ async def _header_queue_handler(
         headers.store_header(header_dict['hex'])
 
         if outq is not None:
-            await outq.put(header)
+            await outq.put(header_dict)
 
 
 async def _catch_up(from_height: int) -> None:
