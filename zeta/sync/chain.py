@@ -1,7 +1,7 @@
 import asyncio
 
 from zeta import electrum
-from zeta.db import checkpoint, connection, headers
+from zeta.db import checkpoint, headers
 
 from zeta.zeta_types import Header
 from typing import cast, List, Optional, Union
@@ -28,9 +28,6 @@ def _initial_setup() -> int:
     Ensures the database directory exists, and tables exist
     Then set the highest checkpoint, and return its height
     '''
-    connection.ensure_directory(connection.PATH)
-    connection.ensure_tables()
-
     # Get the highest checkpoint
     latest_checkpoint = max(checkpoint.CHECKPOINTS, key=lambda k: k['height'])
     headers.store_header(latest_checkpoint)
@@ -97,8 +94,7 @@ async def _maintain_db() -> None:
 
         # NB: 0 means no known parent
         floating = headers.find_by_height(0)
-        print('performing maintenance task. '
-              'found {} headers at 0'.format(len(floating)))
+
         # NB: this will attempt to find their parent and fill in height/accdiff
         for header in floating:
             headers.store_header(header)

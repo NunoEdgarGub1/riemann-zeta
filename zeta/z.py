@@ -1,8 +1,8 @@
 import asyncio
 
-from zeta.db import headers
-from zeta.sync import chain
 from zeta import crypto, utils
+from zeta.sync import chain, coins
+from zeta.db import addresses, connection, headers
 
 from typing import Optional
 
@@ -11,9 +11,6 @@ async def _status_updater() -> None:
     '''
     Prints stats about the heaviest (best) block every 10 seconds
     '''
-    # wait a few seconds in case we're in bootup
-    await asyncio.sleep(5)
-
     best = None
     while True:
         heaviest = headers.find_heaviest()
@@ -34,31 +31,66 @@ async def _status_updater() -> None:
         await asyncio.sleep(15)
 
 
-async def _report_new_headers() -> None:
+async def _report_new_headers(header_q) -> None:
     # print header hashes as they come in
-    def make_block_hash(header_dict):
+    def make_block_hash(header) -> str:
         # print the header hash in a human-readable format
+        try:
+            header_dict = header[0]
+        except Exception:
+            header_dict = header
         return('new header: {}'.format(
             crypto.hash256(bytes.fromhex(header_dict['hex']))[::-1].hex()))
     asyncio.ensure_future(utils.queue_printer(header_q, make_block_hash))
 
 
-async def zeta(header_q: Optional[asyncio.Queue] = None) -> None:
+async def _report_new_prevouts(prevout_q) -> None:
+    def humanize_prevout(prevout) -> str:
+        if prevout['spent_at'] == -2:
+            return('new prevout: {} sat at {} in {}...{}'.format(
+                prevout['value'],
+                prevout['address'][:16],
+                prevout['outpoint']['tx_id'][:8],
+                prevout['outpoint']['index']))
+        else:
+            return('spent prevout: {} sat at {} in {}...{} block {}'.format(
+                prevout['value'],
+                prevout['address'][:16],
+                prevout['outpoint']['tx_id'][:8],
+                prevout['outpoint']['index'],
+                prevout['spent_at']))
+    asyncio.ensure_future(utils.queue_printer(prevout_q, humanize_prevout))
+
+
+async def zeta(
+        header_q: Optional[asyncio.Queue] = None,
+        prevout_q: Optional[asyncio.Queue] = None) -> None:
     '''
     Main function. Starts the various tasks
     TODO: keep references to the tasks, and monitor them
           gracefully shut down conections and the DB
     '''
+    connection.ensure_directory(connection.PATH)
+    connection.ensure_tables()
+
     asyncio.ensure_future(chain.sync(header_q))
+    asyncio.ensure_future(coins.sync(prevout_q))
 
 
 if __name__ == '__main__':
     # start tracking
     header_q: asyncio.Queue = asyncio.Queue()
-    asyncio.ensure_future(zeta(header_q))
+    prevout_q: asyncio.Queue = asyncio.Queue()
+
+    connection.ensure_directory(connection.PATH)
+    connection.ensure_tables()
+    addresses.store_address('1PVCt7UBbB2ZgzzsmtKtbbqRBbHWsYVzTB')
+
+    asyncio.ensure_future(zeta(header_q, prevout_q))
 
     # wait a few seconds then start the status updater
     asyncio.ensure_future(_status_updater())
-    asyncio.ensure_future(_report_new_headers())
+    asyncio.ensure_future(_report_new_headers(header_q))
+    asyncio.ensure_future(_report_new_prevouts(prevout_q))
 
     asyncio.get_event_loop().run_forever()

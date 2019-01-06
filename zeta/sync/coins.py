@@ -23,7 +23,7 @@ async def _track_known_addresses(outq: Optional[asyncio.Queue]) -> None:
         known_addrs = addresses.find_all_addresses()
 
         # Figure out which ones we aren't already tracking and track them
-        untracked = list(filter(lambda a: a not in tracked), known_addrs)
+        untracked = list(filter(lambda a: a not in tracked, known_addrs))
 
         # record that we tracked each of them
         for addr in untracked:
@@ -44,7 +44,7 @@ async def _sub_to_address(
     intermediate_q: asyncio.Queue = asyncio.Queue()
     await electrum.subscribe_to_address(addr, intermediate_q)
 
-    asyncio.ensure_future(_address_sub_handler(intermediate_q, outq))
+    asyncio.ensure_future(_address_sub_handler(addr, intermediate_q, outq))
 
 
 async def _address_sub_handler(
@@ -56,7 +56,7 @@ async def _address_sub_handler(
         # it contains no information, so we can discard it
         await inq.get()
         # update our view of the unspents
-        asyncio.ensure_futre(_get_address_unspents(address, outq))
+        asyncio.ensure_future(_get_address_unspents(address, outq))
 
 
 async def _get_address_unspents(
@@ -138,15 +138,17 @@ async def _update_recently_spent(
     # NB: Zeta does NOT use the same height semantics as Electrum
     #     Electrum uses 0 for mempool and -1 for parent unconfirmed
     #     Zeta uses -1 for mempool and -2 for no known spending tx
-    history = electrum.get_history(address)
+    history = await electrum.get_history(address)
 
-    history_txns = [electrum.get_tx_verbose(h['tx_hash']) for h in history]
+    history_txns = [await electrum.get_tx_verbose(h['tx_hash'])
+                    for h in history]
 
     # Go through each tx in the history
     for tx in history_txns:
         # determine which outpoints it spent
         spent_outpoints = [
-            {'tx_id': txin['txid'], 'index': txin['vout']} for txin in tx]
+            {'tx_id': txin['txid'], 'index': txin['vout']}
+            for txin in tx['vin']]
 
         # check each prevout in our recently_spent to see which tx spent it
         for prevout in recently_spent:
