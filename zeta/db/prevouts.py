@@ -3,6 +3,7 @@ import sqlite3
 from riemann import utils as rutils
 from riemann.encoding import addresses as addr
 
+from zeta import utils
 from zeta.db import connection
 from zeta.zeta_types import Outpoint, Prevout
 
@@ -11,7 +12,9 @@ from typing import Any, Dict, List, Optional
 
 def prevout_from_row(row: sqlite3.Row) -> Prevout:
     res: Prevout = {
-        'outpoint': Outpoint(tx_id=row['tx_id'], index=row['idx']),
+        'outpoint': Outpoint(
+            tx_id=row['tx_id'],
+            index=row['idx']),
         'value': row['value'],
         'spent_at': row['spent_at'],
         'spent_by': row['spent_by'],
@@ -19,9 +22,9 @@ def prevout_from_row(row: sqlite3.Row) -> Prevout:
     return res
 
 
-def _flatten_outpoint(prevout: Prevout) -> Dict[str, Any]:
+def _flatten_prevout(prevout: Prevout) -> Dict[str, Any]:
     outpoint = '{tx_id}{index}'.format(
-        tx_id=prevout['outpoint']['tx_id'],
+        tx_id=utils.reverse_hex(prevout['outpoint']['tx_id']),
         index=rutils.i2le_padded(prevout['outpoint']['index'], 4).hex())
     return {
         'outpoint': outpoint,
@@ -62,7 +65,7 @@ def store_prevout(prevout: Prevout) -> bool:
         return False
 
     try:
-        flattened = _flatten_outpoint(prevout)
+        flattened = _flatten_prevout(prevout)
         c.execute(
             '''
             INSERT OR REPLACE INTO prevouts VALUES (
@@ -78,6 +81,7 @@ def store_prevout(prevout: Prevout) -> bool:
         connection.commit()
         return True
     except Exception:
+        raise
         return False
     finally:
         c.close()
@@ -98,7 +102,7 @@ def batch_store_prevout(prevout_list: List[Prevout]) -> bool:
             return False
 
     try:
-        flattened_list = list(map(_flatten_outpoint, prevout_list))
+        flattened_list = list(map(_flatten_prevout, prevout_list))
         for prevout in flattened_list:
             c.execute(
                 '''
@@ -115,6 +119,7 @@ def batch_store_prevout(prevout_list: List[Prevout]) -> bool:
         connection.commit()
         return True
     except Exception:
+        raise
         return False
     finally:
         c.close()

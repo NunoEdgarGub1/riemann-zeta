@@ -1,6 +1,6 @@
 import asyncio
 
-from zeta import electrum  # , utils
+from zeta import electrum
 from zeta.db import addresses, headers, prevouts
 
 from typing import Any, List, Optional
@@ -21,14 +21,12 @@ async def _track_known_addresses(outq: Optional[asyncio.Queue]) -> None:
     while True:
         # Find the addresses we know
         known_addrs = addresses.find_all_addresses()
-
         # Figure out which ones we aren't already tracking and track them
         untracked = list(filter(lambda a: a not in tracked, known_addrs))
 
         # record that we tracked each of them
         for addr in untracked:
             tracked.append(addr)
-            asyncio.ensure_future(_get_address_unspents(addr, outq))
             asyncio.ensure_future(_sub_to_address(addr, outq))
 
         # wait 10 seconds and repeat
@@ -68,7 +66,7 @@ async def _get_address_unspents(
     '''
     unspents = await electrum.get_unspents(address)
     prevout_list = _parse_electrum_unspents(unspents, address)
-    outpoint_list = [p['outpoint'] for p in prevout_list]
+    elec_outpoints = [p['outpoint'] for p in prevout_list]
 
     # see if we know of any
     known_prevouts = prevouts.find_by_address(address)
@@ -82,12 +80,13 @@ async def _get_address_unspents(
     # NB: spent_at is -2 if we think it's unspent
     #     this checks that we think unspent, but electrum thinks spent
     recently_spent = list(filter(
-        lambda p: p['spent_at'] == -2 and p['outpoint'] not in outpoint_list,
+        lambda p: p['spent_at'] == -2 and p['outpoint'] not in elec_outpoints,
         known_prevouts))
 
     # send new ones to the outq if present
     if outq is not None:
         for prevout in new_prevouts:
+            print('new_found')
             await outq.put(prevout)
 
     # store new ones in the db
@@ -138,18 +137,23 @@ async def _update_recently_spent(
     # NB: Zeta does NOT use the same height semantics as Electrum
     #     Electrum uses 0 for mempool and -1 for parent unconfirmed
     #     Zeta uses -1 for mempool and -2 for no known spending tx
-    history = await electrum.get_history(address)
+    # NB: defaulting to empty list accounts for the case where history is None,
+    #     which will happen if we get no electrum response
+    if len(recently_spent) == 0:
+        return
 
-    history_txns = [await electrum.get_tx_verbose(h['tx_hash'])
-                    for h in history]
+    history: Optional[List[Any]] = await electrum.get_history(address)
+    if history is None:
+        history = []
 
-    # Go through each tx in the history
-    for tx in history_txns:
+    # Go through each tx in the history, start with the latest
+    for item in history[::-1]:
+        tx = await electrum.get_tx_verbose(item['tx_hash'])
         # determine which outpoints it spent
         spent_outpoints = [
             {'tx_id': txin['txid'], 'index': txin['vout']}
             for txin in tx['vin']]
-
+        # TODO: make this less of a nested-if mess
         # check each prevout in our recently_spent to see which tx spent it
         for prevout in recently_spent:
             if prevout['outpoint'] in spent_outpoints:
@@ -159,14 +163,19 @@ async def _update_recently_spent(
                 if 'blockhash' not in tx:
                     # it's in the mempool right now
                     prevout['spent_at'] = -1
+                    if outq is not None:
+                        await outq.put(prevout)
                 elif 'blockhash' in tx:
                     header = headers.find_by_hash(tx['blockhash'])
                     if header is not None:
                         # we found its header
                         prevout['spent_at'] = header['height']
+                        if outq is not None:
+                            await outq.put(prevout)
                     else:
                         # we don't know its header, toss it back for later
                         prevout['spent_at'] = -2
+
                 # we have assigned a spent_by and height. write it to the db.
                 prevouts.store_prevout(prevout)
 

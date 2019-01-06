@@ -1,6 +1,6 @@
 import asyncio
 import unittest
-from unittest import mock
+# from unittest import mock
 from contextlib import suppress
 
 from zeta.electrum import metaclient

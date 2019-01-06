@@ -32,9 +32,13 @@ class MetaClient():
             try:
                 await c.RPC('server.ping')
             except Exception:
-                # remove from our list of clients if it errors
+                # NB: if it errors, get a new client
+                #     and remove from our list of active clients
+                print('establishing new connection to replace {}'.format(c))
+                new_client = await self.new_client()
+                self._clients.append(new_client)
                 self._clients = list(filter(lambda k: k != c, self._clients))
-                break  # exit the loop at the first error
+                c = new_client
 
     async def setup_connections(self) -> None:
         while len(self._clients) < self._num_clients:

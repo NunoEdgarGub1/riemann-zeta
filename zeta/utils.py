@@ -3,6 +3,10 @@ import asyncio
 from typing import Any, Callable, Optional
 
 
+def reverse_hex(h: str):
+    return bytes.fromhex(h)[::-1].hex()
+
+
 async def queue_printer(
         q: asyncio.Queue,
         transform: Optional[Callable[[Any], Any]] = None) -> None:  # pragma: nocover  # noqa: E501

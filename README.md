@@ -117,6 +117,5 @@ pyinstaller does not support pkg_resources. Putting the servers in .py files ens
 
 Future plans:
 1. Add some logic to check if the chain tip gets stuck (e.g. because of electrum errors)
-1. Track prevouts in history and mempool
 1. Implemnt merkle proof validation
 1. Validate electrum scripthash messages against headers

@@ -1,4 +1,6 @@
+import os
 import asyncio
+import riemann
 
 from zeta import crypto, utils
 from zeta.sync import chain, coins
@@ -49,13 +51,13 @@ async def _report_new_prevouts(prevout_q) -> None:
         if prevout['spent_at'] == -2:
             return('new prevout: {} sat at {} in {}...{}'.format(
                 prevout['value'],
-                prevout['address'][:16],
+                prevout['address'][:12],
                 prevout['outpoint']['tx_id'][:8],
                 prevout['outpoint']['index']))
         else:
             return('spent prevout: {} sat at {} in {}...{} block {}'.format(
                 prevout['value'],
-                prevout['address'][:16],
+                prevout['address'][:12],
                 prevout['outpoint']['tx_id'][:8],
                 prevout['outpoint']['index'],
                 prevout['spent_at']))
@@ -73,6 +75,9 @@ async def zeta(
     connection.ensure_directory(connection.PATH)
     connection.ensure_tables()
 
+    if os.environ.get('ZETA_TESTNET_MODE', False):
+        riemann.select_network('bitcoin_test')
+
     asyncio.ensure_future(chain.sync(header_q))
     asyncio.ensure_future(coins.sync(prevout_q))
 
@@ -84,7 +89,10 @@ if __name__ == '__main__':
 
     connection.ensure_directory(connection.PATH)
     connection.ensure_tables()
-    addresses.store_address('1PVCt7UBbB2ZgzzsmtKtbbqRBbHWsYVzTB')
+
+    if os.environ.get('ZETA_TESTNET_MODE', False):
+        riemann.select_network('bitcoin_test')
+    addresses.store_address('tb1qk0mul90y844ekgqpan8mg9lljasd59ny99ata4')
 
     asyncio.ensure_future(zeta(header_q, prevout_q))
 
