@@ -6,7 +6,7 @@ from typing import Any, List, Dict
 null = None
 
 SERVERS: List[Dict[str, Any]] = []
-if os.environ.get('ZETA_TESTNET_MODE'):
+if os.environ.get('ZETA_TESTNET_MODE'):  # pragma: nocover
     SERVERS = [
     # {
     #  "nickname": null,

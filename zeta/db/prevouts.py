@@ -81,7 +81,6 @@ def store_prevout(prevout: Prevout) -> bool:
         connection.commit()
         return True
     except Exception:
-        raise
         return False
     finally:
         c.close()
@@ -119,7 +118,6 @@ def batch_store_prevout(prevout_list: List[Prevout]) -> bool:
         connection.commit()
         return True
     except Exception:
-        raise
         return False
     finally:
         c.close()
@@ -260,7 +258,7 @@ def check_for_known_outpoints(
     flattened_list: List[str] = []
     for o in outpoint_list:
         flat_outpoint = '{tx_id}{index}'.format(
-            tx_id=o['tx_id'],
+            tx_id=utils.reverse_hex(o['tx_id']),
             index=rutils.i2le_padded(o['index'], 4).hex())
         flattened_list.append(flat_outpoint)
 
