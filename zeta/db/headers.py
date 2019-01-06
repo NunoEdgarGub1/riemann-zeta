@@ -96,6 +96,7 @@ def batch_store_header(h: List[Union[Header, str]]) -> bool:
     Returns:
         (bool): true if succesful, false if error
     '''
+    # TODO: Refactor and improve
     c = connection.get_cursor()
 
     headers: List[Header] = []
@@ -131,6 +132,7 @@ def batch_store_header(h: List[Union[Header, str]]) -> bool:
             results = list(filter(  # type: ignore
                 lambda k: k['hash'] == header['prev_block'],
                 headers))
+            # only populate the fields if the parent has a height
             if len(results) != 0 and results[0]['height'] > 0:  # type: ignore
                 header['height'] = results[0]['height'] + 1  # type: ignore
                 header['accumulated_work'] = (
@@ -158,17 +160,16 @@ def batch_store_header(h: List[Union[Header, str]]) -> bool:
         connection.commit()
         return True
     except Exception:
-        raise
         return False
     finally:
         c.close()
 
 
 def parent_height_and_work(header: Header) -> Tuple[int, int]:
-    parent = find_by_hash(cast(str, header['prev_block']))
+    parent = find_by_hash(header['prev_block'])
     if parent:
-        parent_work = cast(int, parent['accumulated_work'])
-        parent_height = cast(int, parent['height'])
+        parent_work = parent['accumulated_work']
+        parent_height = parent['height']
         return parent_height, parent_work
     else:
         return 0, 0
@@ -190,7 +191,7 @@ def store_header(header: Union[Header, str]) -> bool:
 
     if header['height'] == 0:
         parent_height, parent_work = parent_height_and_work(header)
-        if parent_height != 0 and parent_work != 0:
+        if parent_height != 0:
             header['height'] = parent_height + 1  # type: ignore
             header['accumulated_work'] = (
                 parent_work + header['difficulty'])  # type: ignore
@@ -219,7 +220,6 @@ def store_header(header: Union[Header, str]) -> bool:
         connection.commit()
         return True
     except Exception:
-        raise
         return False
     finally:
         c.close()
@@ -299,8 +299,6 @@ def find_highest() -> List[Header]:
             '''
         )]
         return res
-    except Exception:
-        raise
     finally:
         c.close()
 
@@ -316,7 +314,5 @@ def find_heaviest() -> List[Header]:
             '''
         )]
         return res
-    except Exception:
-        raise
     finally:
         c.close()

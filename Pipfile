@@ -5,8 +5,8 @@ name = "pypi"
 
 [dev-packages]
 ipython = "*"
-pytest = "*"
-mypy = "*"
+pytest = "==4.0.2"
+mypy = {git = "https://github.com/python/mypy.git"}
 tox = "*"
 pytest-cov = "*"
 riemann-zeta = {path = ".", editable = true}

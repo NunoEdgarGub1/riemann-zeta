@@ -7,7 +7,8 @@ from zeta.zeta_types import Header
 from typing import cast, List, Optional, Union
 
 
-async def sync(outq: Optional[asyncio.Queue] = None) -> None:
+async def sync(
+        outq: Optional[asyncio.Queue] = None) -> None:  # pragma: nocover
     '''
     Starts all header tracking processes
     1. subscribe to headers feed (track chain tip)
@@ -35,7 +36,8 @@ def _initial_setup() -> int:
     return cast(int, headers.find_highest()[0]['height'])
 
 
-async def _track_chain_tip(outq: Optional[asyncio.Queue] = None) -> None:
+async def _track_chain_tip(
+        outq: Optional[asyncio.Queue] = None) -> None:  # pragma: nocover
     '''
     subscribes to headers, and starts the header queue handler
     '''

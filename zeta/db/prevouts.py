@@ -5,9 +5,9 @@ from riemann.encoding import addresses as addr
 
 from zeta import utils
 from zeta.db import connection
-from zeta.zeta_types import Outpoint, Prevout
+from zeta.zeta_types import Outpoint, Prevout, PrevoutEntry
 
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 
 def prevout_from_row(row: sqlite3.Row) -> Prevout:
@@ -22,7 +22,7 @@ def prevout_from_row(row: sqlite3.Row) -> Prevout:
     return res
 
 
-def _flatten_prevout(prevout: Prevout) -> Dict[str, Any]:
+def _flatten_prevout(prevout: Prevout) -> PrevoutEntry:
     outpoint = '{tx_id}{index}'.format(
         tx_id=utils.reverse_hex(prevout['outpoint']['tx_id']),
         index=rutils.i2le_padded(prevout['outpoint']['index'], 4).hex())
@@ -102,7 +102,7 @@ def batch_store_prevout(prevout_list: List[Prevout]) -> bool:
 
     try:
         flattened_list = list(map(_flatten_prevout, prevout_list))
-        for prevout in flattened_list:
+        for prevout_entry in flattened_list:
             c.execute(
                 '''
                 INSERT OR REPLACE INTO prevouts VALUES (
@@ -114,7 +114,7 @@ def batch_store_prevout(prevout_list: List[Prevout]) -> bool:
                     :spent_by,
                     :address)
                 ''',
-                prevout)
+                prevout_entry)
         connection.commit()
         return True
     except Exception:

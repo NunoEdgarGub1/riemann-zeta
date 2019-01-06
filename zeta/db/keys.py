@@ -48,7 +48,7 @@ def store_key(key_entry: KeyEntry, secret_phrase: str) -> bool:
     if not validate_key(key_entry):
         return False
 
-    k = key_entry.copy()
+    k = key_entry.copy()  # type: ignore
 
     c = connection.get_cursor()
     try:

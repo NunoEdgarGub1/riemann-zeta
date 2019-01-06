@@ -8,7 +8,7 @@ from zeta import crypto
 from zeta.db import connection
 
 from zeta.zeta_types import AddressEntry
-from typing import List, Union, Optional
+from typing import cast, List, Union, Optional
 
 
 def address_from_row(row: sqlite3.Row) -> AddressEntry:
@@ -65,12 +65,12 @@ def store_address(address: Union[str, AddressEntry]) -> bool:
 
     if type(address) is str:
         a = {
-            'address': address,
+            'address': cast(str, address),
             'script': b'',
             'script_pubkeys': []
         }
     else:
-        a = address
+        a = cast(AddressEntry, address)
 
     if not validate_address(a):
         return False
