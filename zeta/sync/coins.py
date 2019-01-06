@@ -86,7 +86,6 @@ async def _get_address_unspents(
     # send new ones to the outq if present
     if outq is not None:
         for prevout in new_prevouts:
-            print('new_found')
             await outq.put(prevout)
 
     # store new ones in the db
