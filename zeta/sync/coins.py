@@ -3,11 +3,12 @@ import asyncio
 from zeta import electrum
 from zeta.db import addresses, headers, prevouts
 
-from typing import Any, List, Optional
-from zeta.zeta_types import Prevout
+from typing import Any, cast, Dict, List, Optional
+from zeta.zeta_types import Header, Prevout
 
 
-async def sync(outq: Optional[asyncio.Queue] = None) -> None:
+async def sync(
+        outq: Optional[asyncio.Queue] = None) -> None:  # pragma: nocover
     asyncio.ensure_future(_track_known_addresses(outq))
     asyncio.ensure_future(_maintain_db(outq))
 
@@ -17,7 +18,7 @@ async def _track_known_addresses(outq: Optional[asyncio.Queue]) -> None:
     Tracks known addresses
     Regularly queries the db to see if we've learned of new addresses
     '''
-    tracked = []
+    tracked: List[str] = []
     while True:
         # Find the addresses we know
         known_addrs = addresses.find_all_addresses()
@@ -34,8 +35,8 @@ async def _track_known_addresses(outq: Optional[asyncio.Queue]) -> None:
 
 
 async def _sub_to_address(
-        addr: List[str],
-        outq: Optional[asyncio.Queue] = None) -> None:
+        addr: str,
+        outq: Optional[asyncio.Queue] = None) -> None:  # pragma: nocover
     '''
     subs to address and registers a handler
     '''
@@ -48,7 +49,7 @@ async def _sub_to_address(
 async def _address_sub_handler(
         address: str,
         inq: asyncio.Queue,
-        outq: Optional[asyncio.Queue]) -> None:
+        outq: Optional[asyncio.Queue]) -> None:  # pragma: nocover
     while True:
         # wait for a subscription event
         # it contains no information, so we can discard it
@@ -141,13 +142,21 @@ async def _update_recently_spent(
     if len(recently_spent) == 0:
         return
 
-    history: Optional[List[Any]] = await electrum.get_history(address)
-    if history is None:
+    history: List[Dict[str, Any]]
+    history_res: Optional[List[Any]] = await electrum.get_history(address)
+
+    if history_res is None:
         history = []
+    else:
+        history = history_res
 
     # Go through each tx in the history, start with the latest
     for item in history[::-1]:
-        tx = await electrum.get_tx_verbose(item['tx_hash'])
+        tx_res = await electrum.get_tx_verbose(item['tx_hash'])
+        if tx_res is None:
+            return
+        else:
+            tx = cast(Dict[str, Any], tx_res)
         # determine which outpoints it spent
         spent_outpoints = [
             {'tx_id': txin['txid'], 'index': txin['vout']}
@@ -180,7 +189,7 @@ async def _update_recently_spent(
 
 
 async def _maintain_db(
-        outq: Optional[asyncio.Queue] = None) -> None:
+        outq: Optional[asyncio.Queue] = None) -> None:  # pragma: nocover
     '''
     Starts any db maintenance tasks we want
     '''
@@ -218,7 +227,11 @@ async def _update_children_in_mempool(
             #     if it has 10+ confs, update its `spent_at` and store
             #     we should also notify the frontend that we found it
             if tx_details['confirmations'] >= 10:
-                confirming = headers.find_by_hash(tx_details['blockhash'])
+                h = headers.find_by_hash(tx_details['blockhash'])
+                if h is None:
+                    continue
+                else:
+                    confirming = cast(Header, h)
                 prevout['spent_at'] = confirming['height']
                 prevouts.store_prevout(prevout)
                 if outq is not None:
