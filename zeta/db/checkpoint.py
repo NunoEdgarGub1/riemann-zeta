@@ -6,7 +6,9 @@ from typing import List
 
 CHECKPOINTS: List[Header] = []
 
-if not os.environ.get('ZETA_TESTNET_MODE'):
+network: str = os.environ.get('ZETA_NETWORK', 'bitcoin_main')
+
+if network == 'bitcoin_main':
     CHECKPOINTS = [
         {
             'hash': '00000000000000000029f5e855578d7a81f4501f38093c46cb88a47664bf3c0e',
@@ -36,7 +38,7 @@ if not os.environ.get('ZETA_TESTNET_MODE'):
         }
     ]
 
-else:
+elif network == 'bitcoin_test':
     CHECKPOINTS = [
         {
             'hash': '000000000000fce208da3e3b8afcc369835926caa44044e9c2f0caa48c8eba0f',

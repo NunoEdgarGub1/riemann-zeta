@@ -6,7 +6,10 @@ from typing import Any, List, Dict
 null = None
 
 SERVERS: List[Dict[str, Any]] = []
-if os.environ.get('ZETA_TESTNET_MODE'):  # pragma: nocover
+
+network: str = os.environ.get('ZETA_NETWORK', 'bitcoin_main')
+
+if network == 'bitcoin_test' :  # pragma: nocover
     SERVERS = [
     # {
     #  "nickname": null,
@@ -31,7 +34,7 @@ if os.environ.get('ZETA_TESTNET_MODE'):  # pragma: nocover
      "seen_at": 1533670768.8676639
     }
   ]
-else:
+elif network == 'bitcoin_main':
  SERVERS = [{
   "nickname": null,
   "hostname": "104.250.141.242",

@@ -22,10 +22,11 @@ DEFAULT_PATH = os.path.join(PATH_ROOT, '.summa', 'zeta')
 
 # Prefer the env variables
 PATH = os.environ.get('ZETA_DB_PATH', DEFAULT_PATH)
-DB_NAME = os.environ.get('ZETA_DB_NAME', 'zeta.db')
+DB_NAME = os.environ.get('ZETA_DB_NAME', 'zeta')
+CHAIN_NAME = os.environ.get('ZETA_NETWORK', 'bitcoin_main')
 
 # Set the path and make sure it exists
-DB_PATH = os.path.join(PATH, DB_NAME)
+DB_PATH = os.path.join(PATH, '{}_{}.db'.format(DB_NAME, CHAIN_NAME))
 ensure_directory(PATH)
 
 CONN = sqlite3.connect(DB_PATH)
