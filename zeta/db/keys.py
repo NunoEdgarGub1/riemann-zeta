@@ -9,15 +9,19 @@ from typing import cast, Optional, List
 from zeta.zeta_types import KeyEntry
 
 
-def key_from_row(row: sqlite3.Row, secret_phrase: str) -> KeyEntry:
+def key_from_row(
+        row: sqlite3.Row,
+        secret_phrase: Optional[str] = None,
+        get_priv: bool = False) -> KeyEntry:
     '''
     Does what it says on the tin
     '''
-
-    privkey = crypto.decode_aes(row['privkey'], secret_phrase)
-
     res = cast(KeyEntry, dict((k, row[k]) for k in row.keys()))
-    res['privkey'] = privkey
+    if get_priv and secret_phrase:
+        privkey = crypto.decode_aes(row['privkey'], secret_phrase)
+        res['privkey'] = privkey
+    else:
+        res['privkey'] = b''
     return res
 
 
@@ -34,8 +38,10 @@ def validate_key(k: KeyEntry) -> bool:
         return False
 
     # pubkey matches privkey
-    if k['pubkey'] != crypto.to_pubkey(crypto.coerce_key(k['privkey'])).hex():
-        return False
+    if k['privkey'] != b'':
+        pubkey = crypto.to_pubkey(crypto.coerce_key(k['privkey'])).hex()
+        if k['pubkey'] != pubkey:
+            return False
 
     # address matches pubkey
     if k['address'] != addr.make_p2wpkh_address(bytes.fromhex(k['pubkey'])):
@@ -44,7 +50,7 @@ def validate_key(k: KeyEntry) -> bool:
     return True
 
 
-def store_key(key_entry: KeyEntry, secret_phrase: str) -> bool:
+def store_key(key_entry: KeyEntry, secret_phrase: Optional[str]) -> bool:
     if not validate_key(key_entry):
         return False
 
@@ -52,7 +58,9 @@ def store_key(key_entry: KeyEntry, secret_phrase: str) -> bool:
 
     c = connection.get_cursor()
     try:
-        k['privkey'] = crypto.encode_aes(k['privkey'], secret_phrase)
+        k['privkey'] = crypto.encode_aes(
+            message_bytes=k['privkey'],
+            secret_phrase=cast(str, secret_phrase))
         c.execute(
             '''
             INSERT OR IGNORE INTO addresses VALUES (
@@ -78,7 +86,10 @@ def store_key(key_entry: KeyEntry, secret_phrase: str) -> bool:
         c.close()
 
 
-def find_by_address(address: str, secret_phrase: str) -> Optional[KeyEntry]:
+def find_by_address(
+        address: str,
+        secret_phrase: Optional[str] = None,
+        get_priv: bool = False) -> Optional[KeyEntry]:
     '''
     finds a key by its primary address
     its primary address is the bech32 p2wpkh of its compressed pubkey
@@ -94,19 +105,22 @@ def find_by_address(address: str, secret_phrase: str) -> Optional[KeyEntry]:
         for a in res:
             # little hacky. returns first entry
             # we know there can only be one
-            return key_from_row(a, secret_phrase)
+            return key_from_row(a, secret_phrase, get_priv)
         return None
     finally:
         c.close()
 
 
-def find_by_pubkey(pubkey: str, secret_phrase: str) -> List[KeyEntry]:
+def find_by_pubkey(
+        pubkey: str,
+        secret_phrase: Optional[str] = None,
+        get_priv: bool = False) -> List[KeyEntry]:
     '''
     finds a key by its pubkey
     '''
     c = connection.get_cursor()
     try:
-        res = [key_from_row(r, secret_phrase) for r in c.execute(
+        res = [key_from_row(r, secret_phrase, get_priv) for r in c.execute(
             '''
             SELECT * FROM keys
             WHERE pubkey = :pubkey
@@ -117,13 +131,16 @@ def find_by_pubkey(pubkey: str, secret_phrase: str) -> List[KeyEntry]:
         c.close()
 
 
-def find_by_script(script: bytes, secret_phrase: str) -> List[KeyEntry]:
+def find_by_script(
+        script: bytes,
+        secret_phrase: Optional[str] = None,
+        get_priv: bool = False) -> List[KeyEntry]:
     '''
     Finds all KeyEntries whose pubkey appears in a certain script
     '''
     c = connection.get_cursor()
     try:
-        res = [key_from_row(r, secret_phrase) for r in c.execute(
+        res = [key_from_row(r, secret_phrase, get_priv) for r in c.execute(
             '''
             SELECT * FROM keys
             WHERE pubkey IN

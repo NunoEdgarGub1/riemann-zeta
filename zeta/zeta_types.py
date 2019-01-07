@@ -23,15 +23,15 @@ AddressEntry = TypedDict(
     'AddressEntry',
     {
         'address': str,
-        'script': bytes,
-        'script_pubkeys': List[str]
+        'script': bytes,  # the redeem script for p2sh/p2wsh
+        'script_pubkeys': List[str]  # parsed pubkeys in the redeem script
     }
 )
 
 Outpoint = TypedDict(
     'Outpoint',
     {
-        'tx_id': str,
+        'tx_id': str,  # block explorer format
         'index': int
     }
 )
@@ -40,22 +40,22 @@ Prevout = TypedDict(
     'Prevout',
     {
         'outpoint': Outpoint,
-        'value': int,
-        'spent_at': int,
-        'spent_by': str,
+        'value': int,  # in satoshi
+        'spent_at': int,  # block height
+        'spent_by': str,  # txid
         'address': str
     }
 )
 
-PrevoutEntry = TypedDict(
+PrevoutEntry = TypedDict(  # the DB formatted prevout
     'PrevoutEntry',
     {
-        'outpoint': str,
-        'tx_id': str,
+        'outpoint': str,  # tx serialization format
+        'tx_id': str,  # block explorers
         'idx': int,
-        'value': int,
-        'spent_at': int,
-        'spent_by': str,
+        'value': int,  # in sat
+        'spent_at': int,  # block height
+        'spent_by': str,  # txid
         'address': str
     }
 )
@@ -64,10 +64,10 @@ KeyEntry = TypedDict(
     'KeyEntry',
     {
         'address': str,
-        'privkey': bytes,
+        'privkey': bytes,  # encrypted when in the DB
         'pubkey': str,
         'derivation': str,
-        'chain': str
+        'chain': str  # deprecated
     }
 )
 

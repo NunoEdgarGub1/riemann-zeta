@@ -37,8 +37,14 @@ class TestKeys(unittest.TestCase):
 
     def test_key_from_row(self):
         self.assertEqual(
-            keys.key_from_row(self.enc_test_key, self.secret),
+            keys.key_from_row(self.enc_test_key, self.secret, True),
             self.test_key)
+
+        no_priv = self.test_key.copy()
+        no_priv['privkey'] = b''
+        self.assertEqual(
+            keys.key_from_row(self.enc_test_key),
+            no_priv)
 
     def test_store_key(self):
         self.assertFalse(keys.store_key({}, self.secret))
@@ -82,13 +88,14 @@ class TestKeys(unittest.TestCase):
         ))
 
     def test_find_by_address(self):
-        res = keys.find_by_address(self.test_key['address'], self.secret)
+        res = keys.find_by_address(self.test_key['address'], self.secret, True)
         self.assertEqual(res, self.test_key)
 
-        self.assertIsNone(keys.find_by_address('fake address', self.secret))
+        self.assertIsNone(
+            keys.find_by_address('fake address', self.secret, True))
 
     def test_find_by_pubkey(self):
-        res = keys.find_by_pubkey(self.test_key['pubkey'], self.secret)
+        res = keys.find_by_pubkey(self.test_key['pubkey'], self.secret, True)
         self.assertEqual(res[0], self.test_key)
 
     def test_find_by_script(self):
@@ -98,5 +105,5 @@ class TestKeys(unittest.TestCase):
                 'address': 'bc1q9m378m3z3facvxaddmk694p3ynqw8n644df7lynn4kpy3fmvg4tq57wx6a',  # noqa: E501
                 'script': script,
                 'script_pubkeys': ['0279a0ac5aa3a2efba0cfab8370816580ae3a561be7e4b47c59cf8c35e38beef08', '0279a0ac5aa3a2efba0cfab8370816580ae3a561be7e4b47c59cf8c35e38beef06']}))  # noqa: E501
-        res = keys.find_by_script(script, self.secret)
+        res = keys.find_by_script(script, self.secret, True)
         self.assertEqual(res[0], self.test_key)
