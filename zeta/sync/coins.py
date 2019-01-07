@@ -167,7 +167,7 @@ async def _update_recently_spent(
             if prevout['outpoint'] in spent_outpoints:
                 # if the TX spent our prevout, get its hash for spent_by
                 # and its block height for spent_at
-                prevout['spent_by'] = tx['hash']
+                prevout['spent_by'] = tx['txid']
                 if 'blockhash' not in tx:
                     # it's in the mempool right now
                     prevout['spent_at'] = -1

@@ -4,7 +4,8 @@ import riemann
 
 from zeta import crypto, utils
 from zeta.sync import chain, coins
-from zeta.db import connection, headers  # , addresses
+from zeta.db import connection, headers
+# from zeta.db import addresses
 
 from typing import Optional
 
@@ -71,7 +72,8 @@ async def zeta(
     connection.ensure_directory(connection.PATH)
     connection.ensure_tables()
 
-    riemann.select_network(os.environ.get('ZETA_TESTNET_MODE', 'bitcoin_main'))
+    # switch riemann over to whatever network we're using
+    riemann.select_network(os.environ.get('ZETA_NETWORK', 'bitcoin_main'))
 
     asyncio.ensure_future(chain.sync(header_q))
     asyncio.ensure_future(coins.sync(prevout_q))
@@ -85,7 +87,7 @@ if __name__ == '__main__':
     connection.ensure_directory(connection.PATH)
     connection.ensure_tables()
 
-    riemann.select_network(os.environ.get('ZETA_TESTNET_MODE', 'bitcoin_main'))
+    riemann.select_network(os.environ.get('ZETA_NETWORK', 'bitcoin_main'))
     # addresses.store_address('tb1qk0mul90y844ekgqpan8mg9lljasd59ny99ata4')
 
     asyncio.ensure_future(zeta(header_q, prevout_q))
