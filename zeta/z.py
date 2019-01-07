@@ -84,9 +84,11 @@ if __name__ == '__main__':
     header_q: asyncio.Queue = asyncio.Queue()
     prevout_q: asyncio.Queue = asyncio.Queue()
 
+    # make sure the tables exist
     connection.ensure_directory(connection.PATH)
     connection.ensure_tables()
 
+    # store the sample address
     riemann.select_network(os.environ.get('ZETA_NETWORK', 'bitcoin_main'))
     # addresses.store_address('tb1qk0mul90y844ekgqpan8mg9lljasd59ny99ata4')
 
