@@ -5,8 +5,37 @@ from typing import Any, List, Dict
 
 null = None
 
-SERVERS: List[Dict[str, Any]] = [
- {
+SERVERS: List[Dict[str, Any]] = []
+
+network: str = os.environ.get('ZETA_NETWORK', 'bitcoin_main')
+
+if network == 'bitcoin_test' :  # pragma: nocover
+    SERVERS = [
+    # {
+    #  "nickname": null,
+    #  "hostname": "testnet.hsmiths.com",
+    #  "ip_addr": null,
+    #  "ports": [
+    #   "s53012"
+    #  ],
+    #  "version": "1.2",
+    #  "pruning_limit": 0,
+    #  "seen_at": 1533670768.8676639
+    # },
+    {
+     "nickname": null,
+     "hostname": "testnet.qtornado.com",
+     "ip_addr": null,
+     "ports": [
+      "s51002"
+     ],
+     "version": "1.2",
+     "pruning_limit": 0,
+     "seen_at": 1533670768.8676639
+    }
+  ]
+elif network == 'bitcoin_main':
+ SERVERS = [{
   "nickname": null,
   "hostname": "104.250.141.242",
   "ip_addr": null,
@@ -206,18 +235,18 @@ SERVERS: List[Dict[str, Any]] = [
   "pruning_limit": 0,
   "seen_at": 1533670768.867786
  },
- {
-  "nickname": null,
-  "hostname": "bitcoin.cluelessperson.com",
-  "ip_addr": "172.92.140.254",
-  "ports": [
-   "s50002",
-   "t50001"
-  ],
-  "version": "1.2",
-  "pruning_limit": 0,
-  "seen_at": 1533670768.588772
- },
+ # {
+ #  "nickname": null,
+ #  "hostname": "bitcoin.cluelessperson.com",
+ #  "ip_addr": "172.92.140.254",
+ #  "ports": [
+ #   "s50002",
+ #   "t50001"
+ #  ],
+ #  "version": "1.2",
+ #  "pruning_limit": 0,
+ #  "seen_at": 1533670768.588772
+ # },
  {
   "nickname": null,
   "hostname": "bitcoin.corgi.party",
@@ -610,18 +639,18 @@ SERVERS: List[Dict[str, Any]] = [
   "pruning_limit": 0,
   "seen_at": 1533670768.8676531
  },
- {
-  "nickname": null,
-  "hostname": "electrum.coinucopia.io",
-  "ip_addr": "67.205.187.44",
-  "ports": [
-   "s50002",
-   "t50001"
-  ],
-  "version": "1.2",
-  "pruning_limit": 0,
-  "seen_at": 1533670768.867501
- },
+ # {
+ #  "nickname": null,
+ #  "hostname": "electrum.coinucopia.io",
+ #  "ip_addr": "67.205.187.44",
+ #  "ports": [
+ #   "s50002",
+ #   "t50001"
+ #  ],
+ #  "version": "1.2",
+ #  "pruning_limit": 0,
+ #  "seen_at": 1533670768.867501
+ # },
  {
   "nickname": null,
   "hostname": "electrum.dk",

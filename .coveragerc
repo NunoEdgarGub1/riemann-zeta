@@ -1,0 +1,15 @@
+[run]
+source = zeta/
+omit =
+    zeta/tests/*
+    zeta/z.py
+    zeta/zeta_types.py
+    zeta/db/checkpoint.py
+    zeta/electrum/servers.py
+
+[report]
+show_missing = True
+sort = Name
+
+[html]
+directory = coverage/html/

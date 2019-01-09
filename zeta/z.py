@@ -1,74 +1,16 @@
+import os
 import asyncio
+import riemann
 
-from zeta import checkpoint, electrum, connection, headers
+from zeta import crypto, utils
+from zeta.sync import chain, coins
+from zeta.db import connection, headers
+# from zeta.db import addresses
 
-from zeta.utils import Header
-from typing import cast, List, Union
-
-
-async def track_chain_tip() -> None:
-    '''
-    subscribes to headers, and starts the header queue handler
-    '''
-    q: asyncio.Queue = asyncio.Queue()
-    await electrum.subscribe_to_headers(q)
-    asyncio.ensure_future(header_queue_handler(q))
+from typing import Optional
 
 
-async def header_queue_handler(q: asyncio.Queue) -> None:
-    '''
-    Handles a queue of incoming headers. Ingests each individually
-    Args:
-        q (asyncio.Queue): the queue of headers awaiting ingestion
-    '''
-    while True:
-        header = await q.get()
-        print('got header in queue')
-
-        # NB: the initial result and subsequent notifications are inconsistent
-        try:
-            hex_header = header[0]['hex']
-        except Exception:
-            hex_header = header['hex']
-        print(hex_header)
-        headers.store_header(hex_header)
-
-
-async def catch_up(from_height: int) -> None:
-    '''
-    Catches the chain tip up to latest by batch requesting headers
-    Schedules itself at a new from_height if not complete yet
-    Increments by 2014 to pad against the possibility of multiple off-by-ones
-    Args:
-        from_height (int): height we currently have, and want to start from
-    '''
-    electrum_response = await electrum.get_headers(from_height, 2016)
-
-    # NB: we requested 2016. If we got back 2016, it's likely there are more
-    if electrum_response['count'] == 2016:
-        asyncio.ensure_future(catch_up(from_height + 2014))
-    process_header_batch(electrum_response['hex'])
-
-
-async def maintain_db() -> None:
-    '''
-    Loop that checks the DB for headers at height 0
-    Restoring them attempts to connect them to another known header
-    '''
-    print('starting maintenance coro')
-    while True:
-        await asyncio.sleep(60)
-
-        # NB: 0 means no known parent
-        floating = headers.find_by_height(0)
-        print('performing maintenance task. '
-              'found {} headers at 0'.format(len(floating)))
-        # NB: this will attempt to find their parent and fill in height/accdiff
-        for header in floating:
-            headers.store_header(header)
-
-
-async def status_updater() -> None:
+async def _status_updater() -> None:
     '''
     Prints stats about the heaviest (best) block every 10 seconds
     '''
@@ -89,54 +31,72 @@ async def status_updater() -> None:
                 best['height'],
                 best['accumulated_work']
             ))
-        await asyncio.sleep(10)
+        await asyncio.sleep(15)
 
 
-def process_header_batch(electrum_hex: str) -> None:
-    '''
-    Processes a batch of headers
-    Args:
-        electrum_hex (str): The 'hex' attribute of electrum's getheaders res
-    '''
-    blob = bytes.fromhex(electrum_hex)
-
-    # NB: this comes as a single hex string with all headers concatenated
-    header_list: List[Union[Header, str]]
-    header_list = [blob[i:i + 80].hex() for i in range(0, len(blob), 80)]
-
-    headers.batch_store_header(header_list)
+async def _report_new_headers(header_q) -> None:
+    # print header hashes as they come in
+    def make_block_hash(h) -> str:
+        # print the header hash in a human-readable format
+        return('new header: {}'.format(
+            crypto.hash256(bytes.fromhex(h['hex']))[::-1].hex()))
+    asyncio.ensure_future(utils.queue_printer(header_q, make_block_hash))
 
 
-def initial_setup() -> int:
-    '''
-    Ensures the database directory exists, and tables exist
-    Then set the highest checkpoint, and return its height
-    '''
-    connection.ensure_directory()
-    connection.ensure_tables()
+async def _report_new_prevouts(prevout_q) -> None:
+    def humanize_prevout(prevout) -> str:
+        if prevout['spent_at'] == -2:
+            return('new prevout: {} sat at {} in {}...{}'.format(
+                prevout['value'],
+                prevout['address'][:12],
+                prevout['outpoint']['tx_id'][:8],
+                prevout['outpoint']['index']))
+        else:
+            return('spent prevout: {} sat at {} in {}...{} block {}'.format(
+                prevout['value'],
+                prevout['address'][:12],
+                prevout['outpoint']['tx_id'][:8],
+                prevout['outpoint']['index'],
+                prevout['spent_at']))
+    asyncio.ensure_future(utils.queue_printer(prevout_q, humanize_prevout))
 
-    # Get the highest checkpoint
-    latest_checkpoint = max(checkpoint.CHECKPOINTS, key=lambda k: k['height'])
-    headers.store_header(latest_checkpoint)
 
-    return cast(int, headers.find_highest()[0]['height'])
-
-
-async def zeta() -> None:
+async def zeta(
+        header_q: Optional[asyncio.Queue] = None,
+        prevout_q: Optional[asyncio.Queue] = None) -> None:
     '''
     Main function. Starts the various tasks
     TODO: keep references to the tasks, and monitor them
           gracefully shut down conections and the DB
     '''
-    last_known_height = initial_setup()
-    # NB: assume there hasn't been a 10 block reorg
-    asyncio.ensure_future(track_chain_tip())
-    asyncio.ensure_future(catch_up(last_known_height))
-    asyncio.ensure_future(maintain_db())
-    asyncio.ensure_future(status_updater())
+    connection.ensure_directory(connection.PATH)
+    connection.ensure_tables()
+
+    # switch riemann over to whatever network we're using
+    riemann.select_network(os.environ.get('ZETA_NETWORK', 'bitcoin_main'))
+
+    asyncio.ensure_future(chain.sync(header_q))
+    asyncio.ensure_future(coins.sync(prevout_q))
 
 
 if __name__ == '__main__':
-    # do the thing
-    asyncio.ensure_future(zeta())
+    # start tracking
+    header_q: asyncio.Queue = asyncio.Queue()
+    prevout_q: asyncio.Queue = asyncio.Queue()
+
+    # make sure the tables exist
+    connection.ensure_directory(connection.PATH)
+    connection.ensure_tables()
+
+    # store the sample address
+    riemann.select_network(os.environ.get('ZETA_NETWORK', 'bitcoin_main'))
+    # addresses.store_address('tb1qk0mul90y844ekgqpan8mg9lljasd59ny99ata4')
+
+    asyncio.ensure_future(zeta(header_q, prevout_q))
+
+    # wait a few seconds then start the status updater
+    asyncio.ensure_future(_status_updater())
+    asyncio.ensure_future(_report_new_headers(header_q))
+    asyncio.ensure_future(_report_new_prevouts(prevout_q))
+
     asyncio.get_event_loop().run_forever()

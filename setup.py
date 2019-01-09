@@ -2,20 +2,21 @@ from setuptools import setup, find_packages
 
 setup(
     name='riemann-zeta',
-    version='0.0.1',
+    version='1.0.0',
     author='James Prestwich',
-    license='NONE',
+    license='LGPL',
     packages=find_packages(),
     package_dir={'zeta': 'zeta'},
     install_requires=[
-        'connectrum'
-    ],
+        'connectrum',
+        'riemann-tx==1.1.6',
+        'ecdsa',
+        'pycryptodomex'],
     tests_require=[
         'tox',
         'mypy',
         'flake8',
         'pytest',
-        'pytest-cov'
-    ],
+        'pytest-cov'],
     python_requires='>=3.6'
 )

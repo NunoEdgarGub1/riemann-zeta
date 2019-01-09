@@ -5,15 +5,19 @@ name = "pypi"
 
 [dev-packages]
 ipython = "*"
-pytest = "*"
-mypy = "*"
+pytest = "==4.0.2"
+mypy = {git = "https://github.com/python/mypy.git"}
 tox = "*"
 pytest-cov = "*"
 riemann-zeta = {path = ".", editable = true}
+mypy-extensions = "*"
+flake8 = "*"
 
 [packages]
 connectrum = "*"
-mypy-extensions = "*"
+riemann-tx = "==1.1.6"
+ecdsa = "*"
+pycryptodomex = "*"
 
 [requires]
 python_version = "3.6"

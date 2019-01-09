@@ -1,33 +1,35 @@
 import asyncio
 
-from mypy_extensions import TypedDict
 from typing import Any, Callable, Optional
 
 
-# Header = Dict[str, Union[str, int]]
+def reverse_hex(h: str):
+    return bytes.fromhex(h)[::-1].hex()
 
-Header = TypedDict(
-    'Header',
-    {
-        'hash': str,
-        'version': int,
-        'prev_block': str,
-        'merkle_root': str,
-        'timestamp': int,
-        'nbits': str,
-        'nonce': str,
-        'difficulty': int,
-        'hex': str,
-        'height': int,
-        'accumulated_work': int
-    }
-)
+
+async def queue_printer(
+        q: asyncio.Queue,
+        transform: Optional[Callable[[Any], Any]] = None) -> None:  # pragma: nocover  # noqa: E501
+    '''
+    Prints a queue as entries come in
+    Useful for debugging
+
+    Args:
+        q (asyncio.Queue): the queue to print
+    '''
+    print('registering printer')
+
+    def do_nothing(k: Any) -> Any:
+        return k
+    t = transform if transform is not None else do_nothing
+    while True:
+        print(t(await q.get()))
 
 
 async def queue_forwarder(
         inq: asyncio.Queue,
         outq: asyncio.Queue,
-        transform: Optional[Callable[[Any], Any]] = None) -> None:
+        transform: Optional[Callable[[Any], Any]] = None) -> None:  # pragma: nocover  # noqa: E501
     '''
     Forwards everything from a queue to another queue
     Useful for combining queues
