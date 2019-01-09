@@ -7,7 +7,7 @@ from zeta.sync import chain, coins
 from zeta.db import connection, headers
 # from zeta.db import addresses
 
-from typing import Optional
+from typing import Optional, Tuple
 
 
 async def _status_updater() -> None:
@@ -63,11 +63,13 @@ async def _report_new_prevouts(prevout_q) -> None:
 
 async def zeta(
         header_q: Optional[asyncio.Queue] = None,
-        prevout_q: Optional[asyncio.Queue] = None) -> None:
+        prevout_q: Optional[asyncio.Queue] = None) -> \
+        Tuple[asyncio.Future[None], asyncio.Future[None]]:
     '''
-    Main function. Starts the various tasks
-    TODO: keep references to the tasks, and monitor them
-          gracefully shut down conections and the DB
+    Main function.
+    Starts the various tasks.
+    Pass in queues to access task outputs (new headers/prevout events)
+    Returns references to the tasks
     '''
     connection.ensure_directory(connection.PATH)
     connection.ensure_tables()
@@ -75,8 +77,10 @@ async def zeta(
     # switch riemann over to whatever network we're using
     riemann.select_network(os.environ.get('ZETA_NETWORK', 'bitcoin_main'))
 
-    asyncio.ensure_future(chain.sync(header_q))
-    asyncio.ensure_future(coins.sync(prevout_q))
+    chain_task = asyncio.ensure_future(chain.sync(header_q))
+    coin_task = asyncio.ensure_future(coins.sync(prevout_q))
+
+    return chain_task, coin_task
 
 
 if __name__ == '__main__':
