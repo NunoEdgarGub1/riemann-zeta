@@ -5,9 +5,8 @@ import riemann
 from zeta import crypto, utils
 from zeta.sync import chain, coins
 from zeta.db import connection, headers
-# from zeta.db import addresses
 
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 
 
 async def _status_updater() -> None:
@@ -65,7 +64,7 @@ async def zeta(
         header_q: Optional[asyncio.Queue] = None,
         prevout_q: Optional[asyncio.Queue] = None,
         network: str = 'bitcoin_main') -> \
-        Tuple['asyncio.Future[None]', 'asyncio.Future[None]']:
+        Tuple[Any, Any]:
     '''
     Main function.
     Starts the various tasks.
