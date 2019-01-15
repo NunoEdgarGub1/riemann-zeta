@@ -65,7 +65,7 @@ async def zeta(
         header_q: Optional[asyncio.Queue] = None,
         prevout_q: Optional[asyncio.Queue] = None,
         network: str = 'bitcoin_main') -> \
-        Tuple[asyncio.Future[None], asyncio.Future[None]]:
+        Tuple['asyncio.Future[None]', 'asyncio.Future[None]']:
     '''
     Main function.
     Starts the various tasks.

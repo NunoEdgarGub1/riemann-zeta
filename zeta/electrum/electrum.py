@@ -158,7 +158,7 @@ async def get_mempool(address: str) -> List[Dict[str, Any]]:
     '''
     client = await _get_client()
     try:
-        sh = utils.address_to_electrum_scripthash(address)
+        sh = eutils.address_to_electrum_scripthash(address)
         return await client.RPC('blockchain.scripthash.get_mempool', sh)
     except ValueError:
         return []
