@@ -149,6 +149,21 @@ async def get_unspents(address: str) -> List[Dict[str, Any]]:
         return []
 
 
+async def get_mempool(address: str) -> List[Dict[str, Any]]:
+    '''
+    Args:
+        address          (str): the address to check
+    Returns:
+        (list(dict)): tx_hash (BE), height, fee
+    '''
+    client = await _get_client()
+    try:
+        sh = utils.address_to_electrum_scripthash(address)
+        return await client.RPC('blockchain.scripthash.get_mempool', sh)
+    except ValueError:
+        return []
+
+
 async def get_history(address: str) -> List[Dict[str, Any]]:
     '''
     Args:
@@ -162,3 +177,26 @@ async def get_history(address: str) -> List[Dict[str, Any]]:
         return await client.RPC('blockchain.scripthash.get_history', sh)
     except ValueError:
         return []
+
+
+async def estimate_fee(blocks: int = 2) -> int:
+    '''Gets a fee estimate from the Electrum server
+    Args:
+        blocks           (int): the desired confirmation time
+    Returns:
+        (int): the fee per byte in satoshi
+    '''
+    client = await _get_client()
+    estimate = await client.RPC('blockchain.estimatefee', blocks)
+    return round(estimate * 10 ** 8) // 1000
+
+
+async def broadcast(tx_hex: str) -> str:
+    '''
+    Args:
+        tx_hex           (str): signed transaction serialized as hex
+    Returns:
+        (str): the tx hash if successful, error code otherwise
+    '''
+    client = await _get_client()
+    return await client.RPC('blockchain.transaction.broadcast', tx_hex)

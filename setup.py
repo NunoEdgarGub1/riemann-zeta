@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='riemann-zeta',
-    version='1.0.0',
+    version='1.1.0',
     author='James Prestwich',
     license='LGPL',
     packages=find_packages(),
