@@ -63,7 +63,8 @@ async def _report_new_prevouts(prevout_q) -> None:
 
 async def zeta(
         header_q: Optional[asyncio.Queue] = None,
-        prevout_q: Optional[asyncio.Queue] = None) -> \
+        prevout_q: Optional[asyncio.Queue] = None,
+        network: str = 'bitcoin_main') -> \
         Tuple[asyncio.Future[None], asyncio.Future[None]]:
     '''
     Main function.
@@ -75,7 +76,7 @@ async def zeta(
     connection.ensure_tables()
 
     # switch riemann over to whatever network we're using
-    riemann.select_network(os.environ.get('ZETA_NETWORK', 'bitcoin_main'))
+    riemann.select_network(os.environ.get('ZETA_NETWORK', network))
 
     chain_task = asyncio.ensure_future(chain.sync(header_q))
     coin_task = asyncio.ensure_future(coins.sync(prevout_q))
