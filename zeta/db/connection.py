@@ -2,8 +2,10 @@ import os
 import sys
 import sqlite3
 
+from typing import Optional
 
 # TODO: Clean all this up and make better
+
 
 def ensure_directory(p) -> None:  # pragma: nocover
     '''
@@ -20,17 +22,47 @@ else:
 
 DEFAULT_PATH = os.path.join(PATH_ROOT, '.summa', 'zeta')
 
-# Prefer the env variables
-PATH = os.environ.get('ZETA_DB_PATH', DEFAULT_PATH)
-DB_NAME = os.environ.get('ZETA_DB_NAME', 'zeta')
-CHAIN_NAME = os.environ.get('ZETA_NETWORK', 'bitcoin_main')
+PATH: str
+DB_NAME: str
+CHAIN_NAME: str
 
-# Set the path and make sure it exists
-DB_PATH = os.path.join(PATH, '{}_{}.db'.format(DB_NAME, CHAIN_NAME))
-ensure_directory(PATH)
+DB_PATH: str
+CONN: sqlite3.Connection
 
-CONN = sqlite3.connect(DB_PATH)
-CONN.row_factory = sqlite3.Row
+
+def init_conn(
+        path: Optional[str] = None,
+        db_name: Optional[str] = None,
+        chain_name: Optional[str] = None):
+    global PATH
+    global DB_NAME
+    global CHAIN_NAME
+    global DB_PATH
+    global CONN
+
+    if path:
+        PATH = path
+    else:
+        PATH = os.environ.get('ZETA_DB_PATH', DEFAULT_PATH)
+    if db_name:
+        DB_NAME = db_name
+    else:
+        DB_NAME = os.environ.get('ZETA_DB_NAME', 'zeta')
+    if chain_name:
+        CHAIN_NAME = chain_name
+    else:
+        CHAIN_NAME = os.environ.get('ZETA_NETWORK', 'bitcoin_main')
+
+    # Set the path and make sure it exists
+    DB_PATH = os.path.join(PATH, '{}_{}.db'.format(DB_NAME, CHAIN_NAME))
+    ensure_directory(PATH)
+
+    CONN = sqlite3.connect(DB_PATH)
+    CONN.row_factory = sqlite3.Row
+
+    # make sure the tables exist
+    ensure_directory(PATH)
+    ensure_tables()
 
 
 def commit():

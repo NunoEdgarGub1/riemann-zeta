@@ -8,7 +8,8 @@ from typing import cast, List, Optional, Union
 
 
 async def sync(
-        outq: Optional[asyncio.Queue] = None) -> None:  # pragma: nocover
+        outq: Optional[asyncio.Queue] = None,
+        network: str = 'bitcoin_main') -> None:  # pragma: nocover
     '''
     Starts all header tracking processes
     1. subscribe to headers feed (track chain tip)
@@ -16,7 +17,7 @@ async def sync(
     3. clean up any headers that didn't fit a chain when we found them
     4. print status updates
     '''
-    last_known_height = _initial_setup()
+    last_known_height = _initial_setup(network)
     # NB: assume there hasn't been a 10 block reorg
     asyncio.ensure_future(_track_chain_tip(outq))
     asyncio.ensure_future(_catch_up(last_known_height))
@@ -24,13 +25,15 @@ async def sync(
     # asyncio.ensure_future(_status_updater())
 
 
-def _initial_setup() -> int:
+def _initial_setup(network: str) -> int:
     '''
     Ensures the database directory exists, and tables exist
     Then set the highest checkpoint, and return its height
     '''
     # Get the highest checkpoint
-    latest_checkpoint = max(checkpoint.CHECKPOINTS, key=lambda k: k['height'])
+    latest_checkpoint = max(
+        checkpoint.CHECKPOINTS[network],
+        key=lambda k: k['height'])
     headers.store_header(latest_checkpoint)
 
     return cast(int, headers.find_highest()[0]['height'])

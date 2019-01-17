@@ -2,7 +2,7 @@ import os
 import asyncio
 import riemann
 
-from zeta import crypto, utils
+from zeta import crypto, electrum, utils
 from zeta.sync import chain, coins
 from zeta.db import connection, headers
 
@@ -63,21 +63,20 @@ async def _report_new_prevouts(prevout_q) -> None:
 async def zeta(
         header_q: Optional[asyncio.Queue] = None,
         prevout_q: Optional[asyncio.Queue] = None,
-        network: str = 'bitcoin_main') -> \
-        Tuple[Any, Any]:
+        network: str = 'bitcoin_main') -> Tuple[Any, Any]:
     '''
     Main function.
     Starts the various tasks.
     Pass in queues to access task outputs (new headers/prevout events)
     Returns references to the tasks
     '''
-    connection.ensure_directory(connection.PATH)
-    connection.ensure_tables()
+    # switch zeta and riemann over to whatever network we're using
+    chain_name = os.environ.get('ZETA_NETWORK', network)
+    riemann.select_network(chain_name)
+    connection.init_conn(chain_name=chain_name)
+    await electrum.electrum._make_client(chain_name)
 
-    # switch riemann over to whatever network we're using
-    riemann.select_network(os.environ.get('ZETA_NETWORK', network))
-
-    chain_task = asyncio.ensure_future(chain.sync(header_q))
+    chain_task = asyncio.ensure_future(chain.sync(header_q, chain_name))
     coin_task = asyncio.ensure_future(coins.sync(prevout_q))
 
     return chain_task, coin_task
@@ -88,12 +87,10 @@ if __name__ == '__main__':
     header_q: asyncio.Queue = asyncio.Queue()
     prevout_q: asyncio.Queue = asyncio.Queue()
 
-    # make sure the tables exist
-    connection.ensure_directory(connection.PATH)
-    connection.ensure_tables()
-
     # store the sample address
-    riemann.select_network(os.environ.get('ZETA_NETWORK', 'bitcoin_main'))
+    chain_name = os.environ.get('ZETA_NETWORK', 'bitcoin_main')
+    riemann.select_network(chain_name)
+    connection.init_conn(chain_name=chain_name)
     # addresses.store_address('tb1qk0mul90y844ekgqpan8mg9lljasd59ny99ata4')
 
     asyncio.ensure_future(zeta(header_q, prevout_q))

@@ -86,6 +86,21 @@ def store_key(key_entry: KeyEntry, secret_phrase: Optional[str]) -> bool:
         c.close()
 
 
+def find_one() -> Optional[KeyEntry]:
+    '''
+    Finds some key. Useful for checking if there's a valid key in there
+    '''
+    c = connection.get_cursor()
+    try:
+        res = c.execute(
+            '''
+            SELECT * FROM keys
+            ''').fetchone()
+        return res if res is None else key_from_row(res)
+    finally:
+        c.close()
+
+
 def find_by_address(
         address: str,
         secret_phrase: Optional[str] = None,
@@ -149,5 +164,16 @@ def find_by_script(
             ''',
             {'script': script})]
         return res
+    finally:
+        c.close()
+
+
+def count_keys() -> int:
+    c = connection.get_cursor()
+    try:
+        return c.execute(
+            '''
+            SELECT COUNT(*) FROM keys
+            ''').fetchone()[0]
     finally:
         c.close()

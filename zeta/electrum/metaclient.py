@@ -23,7 +23,8 @@ class MetaClient():
         self._random_set_size = 2  # how many servers to send each RPC
         self._timeout_seconds = 5  # how long to wait for a server response
 
-    async def _keepalive(self, c: StratumClient) -> None:  # pragma: nocover
+    async def _keepalive(
+            self, c: StratumClient, network: str) -> None:  # pragma: nocover
         '''
         Pings a server every 100 seconds to keep a connection alive
         '''
@@ -35,16 +36,16 @@ class MetaClient():
                 # NB: if it errors, get a new client
                 #     and remove from our list of active clients
                 print('establishing new connection to replace {}'.format(c))
-                new_client = await self.new_client()
+                new_client = await self.new_client(network)
                 self._clients.append(new_client)
                 self._clients = list(filter(lambda k: k != c, self._clients))
                 c = new_client
 
-    async def setup_connections(self) -> None:
+    async def setup_connections(self, network: str) -> None:
         while len(self._clients) < self._num_clients:
-            self._clients.append(await self.new_client())
+            self._clients.append(await self.new_client(network))
 
-    def _get_server_info(self) -> ServerInfo:
+    def _get_server_info(self, network: str) -> ServerInfo:
         '''
         Selects a server randomly from the list
         Filters onions, and other protocol versions
@@ -52,16 +53,17 @@ class MetaClient():
         Returns:
             (ServerInfo): the selected server
         '''
-        s = filter(lambda k: k not in self._servers, servers.SERVERS)
+        s = filter(lambda k: k not in self._servers,
+                   servers.SERVERS[network])
         s = filter(lambda k: 'onion' not in k['hostname'], s)
         s = filter(lambda k: k['version'] == self.protocol_version, s)
         server = random.choice(list(s))
         return ServerInfo(server)
 
-    async def new_client(self) -> StratumClient:
+    async def new_client(self, network: str) -> StratumClient:
         while True:
+            server = self._get_server_info(network)
             try:
-                server = self._get_server_info()
 
                 client = StratumClient()
 
@@ -80,7 +82,7 @@ class MetaClient():
                         self.protocol_version),
                     timeout=self._timeout_seconds)
 
-                asyncio.ensure_future(self._keepalive(client))
+                asyncio.ensure_future(self._keepalive(client, network))
                 self._servers.append(str(server))
                 return client
 

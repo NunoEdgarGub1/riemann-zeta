@@ -9,6 +9,7 @@ from zeta.zeta_types import Header, Prevout
 
 async def sync(
         outq: Optional[asyncio.Queue] = None) -> None:  # pragma: nocover
+    '''Starts the syncing tasks'''
     asyncio.ensure_future(_track_known_addresses(outq))
     asyncio.ensure_future(_maintain_db(outq))
 
@@ -17,6 +18,7 @@ async def _track_known_addresses(outq: Optional[asyncio.Queue]) -> None:
     '''
     Tracks known addresses
     Regularly queries the db to see if we've learned of new addresses
+    If we have, spins up a subscription
     '''
     tracked: List[str] = []
     while True:

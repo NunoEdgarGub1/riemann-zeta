@@ -12,7 +12,7 @@ from zeta.zeta_types import ElectrumGetHeadersResponse
 _CLIENT: Optional[MetaClient] = None
 
 
-async def _get_client() -> MetaClient:  # pragma: nocover
+async def _make_client(network: str) -> MetaClient:  # pragma: nocover
     '''
     TODO: Improve
     Gets a singleton metaclient
@@ -24,11 +24,24 @@ async def _get_client() -> MetaClient:  # pragma: nocover
 
     if _CLIENT is None:
         client = MetaClient()
-        await client.setup_connections()
+        await client.setup_connections(network)
         _CLIENT = client
         return _CLIENT
     else:
         return _CLIENT
+
+
+async def _get_client() -> MetaClient:  # pragma: nocover
+    '''
+    TODO: Improve
+    Gets a singleton metaclient
+
+    Returns:
+        (zeta.electrum.metaclient.MetaClient): an Electrum metaclient
+    '''
+    while _CLIENT is None:
+        await asyncio.sleep(5)
+    return _CLIENT
 
 
 async def subscribe_to_headers(outq: asyncio.Queue) -> None:
