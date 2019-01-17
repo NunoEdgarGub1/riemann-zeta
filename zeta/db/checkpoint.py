@@ -4,11 +4,11 @@ import os
 from zeta.db import connection
 from zeta.zeta_types import Header
 
-from typing import List
+from typing import Dict, List
 
 network: str = os.environ.get('ZETA_NETWORK', 'bitcoin_main')
 
-CHECKPOINTS = {
+CHECKPOINTS: Dict[str, List[Header]] = {
     'bitcoin_main': [
             {
                 'hash': '00000000000000000029f5e855578d7a81f4501f38093c46cb88a47664bf3c0e',

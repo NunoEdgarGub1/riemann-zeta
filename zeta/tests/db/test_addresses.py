@@ -11,7 +11,6 @@ class TestAddresses(unittest.TestCase):
         # Replace the connection with an in-memory DB
         c = sqlite3.connect(':memory:')
         c.row_factory = sqlite3.Row
-        self._old_conn = connection.CONN
         connection.CONN = c
         connection.ensure_tables()
 
@@ -38,7 +37,7 @@ class TestAddresses(unittest.TestCase):
         self.assertTrue(addresses.store_address(self.test_msig_legacy))
 
     def tearDown(self):
-        connection.CONN = self._old_conn
+        connection.CONN.close()
 
     def test_address_from_row(self):
         fake_row = {

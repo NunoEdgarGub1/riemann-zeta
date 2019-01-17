@@ -12,7 +12,6 @@ class TestPrevouts(unittest.TestCase):
         # Replace the connection with an in-memory DB to avoid pollution
         c = sqlite3.connect(':memory:')
         c.row_factory = sqlite3.Row
-        self._old_conn = connection.CONN
         connection.CONN = c
         connection.ensure_tables()
 
@@ -36,7 +35,7 @@ class TestPrevouts(unittest.TestCase):
         self.assertTrue(prevouts.store_prevout(self.prevout))
 
     def tearDown(self):
-        connection.CONN = self._old_conn
+        connection.CONN.close()
 
     def test_validate_prevout(self):
         # nothing

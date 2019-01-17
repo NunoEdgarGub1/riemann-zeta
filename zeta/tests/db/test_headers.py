@@ -10,7 +10,6 @@ class TestHeaders(unittest.TestCase):
     def setUp(self):
         c = sqlite3.connect(':memory:')
         c.row_factory = sqlite3.Row
-        self._old_conn = connection.CONN
         connection.CONN = c
         connection.ensure_tables()
 
@@ -37,7 +36,6 @@ class TestHeaders(unittest.TestCase):
 
     def tearDown(self):
         connection.CONN.close()
-        connection.CONN = self._old_conn
 
     def test_header_from_row(self):
         self.assertEqual(
@@ -46,7 +44,7 @@ class TestHeaders(unittest.TestCase):
 
     def test_check_work(self):
         self.assertTrue(headers.check_work(self.test_header))
-        for header in checkpoint.CHECKPOINTS:
+        for header in checkpoint.CHECKPOINTS['bitcoin_test']:
             self.assertTrue(headers.check_work(header))
         bad_header = self.test_header.copy()
         bad_header['hash'] = '77' * 32
@@ -67,13 +65,13 @@ class TestHeaders(unittest.TestCase):
             0x92340000)
 
     def test_parse_difficulty(self):
-        for header in checkpoint.CHECKPOINTS:
+        for header in checkpoint.CHECKPOINTS['bitcoin_test']:
             self.assertEqual(
                 headers.parse_difficulty(bytes.fromhex(header['nbits'])),
                 header['difficulty'])
 
     def test_parse_header(self):
-        for header in checkpoint.CHECKPOINTS:
+        for header in checkpoint.CHECKPOINTS['bitcoin_test']:
             self.assertEqual(
                 headers.parse_header(header['hex']),
                 header)
@@ -82,7 +80,8 @@ class TestHeaders(unittest.TestCase):
         self.assertIn('Invalid header received', str(context.exception))
 
     def test_batch_store_header(self):
-        self.assertTrue(headers.batch_store_header(checkpoint.CHECKPOINTS))
+        self.assertTrue(headers.batch_store_header(
+            checkpoint.CHECKPOINTS['bitcoin_test']))
 
     @mock.patch('zeta.db.headers.check_work')
     def test_batch_store_header_failure(self, mock_check):

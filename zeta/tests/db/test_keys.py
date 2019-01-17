@@ -11,7 +11,6 @@ class TestKeys(unittest.TestCase):
     def setUp(self):
         c = sqlite3.connect(':memory:')
         c.row_factory = sqlite3.Row
-        self._old_conn = connection.CONN
         connection.CONN = c
         connection.ensure_tables()
 
@@ -33,7 +32,6 @@ class TestKeys(unittest.TestCase):
 
     def tearDown(self):
         connection.CONN.close()
-        connection.CONN = self._old_conn
 
     def test_key_from_row(self):
         self.assertEqual(

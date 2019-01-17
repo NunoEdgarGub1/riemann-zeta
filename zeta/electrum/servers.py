@@ -2,9 +2,11 @@
 
 import os
 
+from typing import Any, Dict, List
+
 null = None  # NB: I copied the list from elsewhere
 
-SERVERS = {
+SERVERS: Dict[str, List[Dict[str, Any]]] = {
     'bitcoin_test': [
         {
          "nickname": null,
@@ -18,7 +20,7 @@ SERVERS = {
          "seen_at": 1533670768.8676639
         }
       ],
- 'bitcoin_main': [
+    'bitcoin_main': [
       {
        "nickname": null,
        "hostname": "104.250.141.242",
