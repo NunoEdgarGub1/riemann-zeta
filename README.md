@@ -54,7 +54,13 @@ async def use_zeta():
 
     # if you pass in a queue, you can get access to the electrum subscription
     header_q = asyncio.Queue()
-    asyncio.ensure_future(z.zeta(header_q=header_q))
+    prevout_q = asyncio.Queue()
+
+    # We return running tasks that sync the header chain and coins
+    chain_task, coin_task = await z.zeta(  
+        header_q=header_q,
+        prevout_q=prevout_q,
+        network='bitcoin_main'))
 
     # NB: Chain sync may take some time, depending on your checkpoint
     #     You have to wait.
@@ -63,7 +69,7 @@ async def use_zeta():
 
     # NB : returns a List of header dicts, heights are NOT (!!) unique
     #      we store ALL HEADERS we hear of, including orphans
-    headers.find_by_height(595959)  
+    headers.find_by_height(595959)
     headers.find_highest()
 
     # NB: returns a List of header dicts. total difficulty is NOT (!!) unique
